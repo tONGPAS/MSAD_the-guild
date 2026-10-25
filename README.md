@@ -22,10 +22,11 @@ You need Node.js 20 or newer.
 ### 1. Create the Supabase project
 
 1. Go to [supabase.com](https://supabase.com), create a project. Pick the **Southeast Asia (Singapore)** region so it is close to Cebu. Save the database password somewhere safe.
-2. Open **Project Settings > Database > Connection string**.
+2. Click the **Connect** button in the top bar of your project page. In the dialog:
    - Copy the **Transaction pooler** string (port `6543`). This is your `DATABASE_URL`.
    - Copy the **Session pooler** string (port `5432`). This is your `DIRECT_URL`.
-   - Replace `[YOUR-PASSWORD]` in both with your database password.
+   - Replace `[YOUR-PASSWORD]` in both with your database password. If the password has `@ # / ? %` in it, percent-encode those characters (`@` is `%40`) or reset the password to letters and numbers only.
+   - Skip "Direct connection": it needs IPv6, which many home and campus networks lack.
 3. (Optional, for screenshots on quests) Open **Storage**, create a bucket named exactly `attachments`, and leave it **private**. Then from **Project Settings > API** copy the Project URL (`SUPABASE_URL`) and the `service_role` key (`SUPABASE_SERVICE_ROLE_KEY`). Never put the service role key in frontend code or commit it.
 
 ### 2. Configure and run locally
