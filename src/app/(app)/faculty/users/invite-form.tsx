@@ -14,7 +14,8 @@ export function InviteForm({ origin }: { origin: string }) {
       <form action={action} className="flex flex-col gap-3 sm:flex-row sm:items-end">
         <div className="flex-1">
           <label htmlFor="inv-email" className="field-label">E-mail address to invite</label>
-          <input id="inv-email" name="email" type="email" required className="field" />
+          <input id="inv-email" name="email" type="email" required aria-describedby="inv-email-hint" className="field" />
+          <p id="inv-email-hint" className="mt-1 text-sm text-muted">No e-mail is sent. You get a link to share with them yourself.</p>
         </div>
         <div>
           <label htmlFor="inv-role" className="field-label">Role</label>
@@ -28,7 +29,7 @@ export function InviteForm({ origin }: { origin: string }) {
       {state.error && <p role="alert" className="rounded-md bg-danger-soft p-3 text-danger">{state.error}</p>}
       {state.ok && (
         <div role="status" className="rounded-md border border-gold bg-gold-soft p-4">
-          <p className="mb-1">Invitation code created. Give this to the student:</p>
+          <p className="mb-1">Invitation created. Nothing was sent, so share this code or link with them (group chat, Messenger):</p>
           <p className="mb-2 font-mono text-xl font-bold">{state.ok}</p>
           <div className="flex flex-col gap-2 sm:flex-row">
             <input readOnly value={link} aria-label="Registration link" className="field font-mono text-sm" />
