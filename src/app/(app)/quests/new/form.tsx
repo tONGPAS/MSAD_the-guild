@@ -19,7 +19,7 @@ export function NewQuestForm({ attachments }: { attachments: boolean }) {
         {state.error && <p role="alert" className="rounded-md bg-danger-soft p-3 text-danger">{state.error}</p>}
         <div>
           <label htmlFor="title" className="field-label">Title</label>
-          <input id="title" name="title" required maxLength={120} defaultValue={f?.title} placeholder="Add login validation" className="field" />
+          <input id="title" name="title" required maxLength={120} defaultValue={f?.title} placeholder="e.g. Stack push and pop using a linked list" className="field" />
         </div>
         <div>
           <label htmlFor="link" className="field-label">GitHub pull request link</label>
