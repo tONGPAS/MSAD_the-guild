@@ -1,6 +1,6 @@
-//Everything Pip says lives here so the voice stays consistent and is easy to edit
-export const PIP = {
-  signin: ["Welcome to the Guild! I'm Pip, squire on duty. Sign in and let's get your code looked at."],
+//Everything Bit says lives here so the voice stays consistent and is easy to edit
+export const BIT = {
+  signin: ["Welcome to the Guild! I'm Bit, the Guild's slime. Sign in and let's get your code looked at."],
   studentTips: [
     "Submit a quest when you want another pair of eyes on your code. A reviewer is picked for you in turn.",
     "Tell your reviewer what the code should do. A good brief gets you a sharper review.",

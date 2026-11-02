@@ -3,8 +3,8 @@ import Link from "next/link";
 import { requireUser } from "@/modules/auth/session";
 import { allQuests, type QuestFilters } from "@/modules/quests/service";
 import { QuestRows } from "@/components/quest-rows";
-import { Pip } from "@/components/pip";
-import { PIP } from "@/lib/pip-lines";
+import { BitSays } from "@/components/bit-says";
+import { BIT } from "@/lib/bit-lines";
 
 export const metadata: Metadata = { title: "All quests" };
 
@@ -29,7 +29,7 @@ export default async function FacultyQuestsPage({ searchParams }: PageProps<"/fa
     <>
       <h1 className="mb-1 text-3xl font-bold">All quests</h1>
       <p className="mb-5 text-muted">Every quest and review, whoever it is assigned to.</p>
-      <Pip lines={[...PIP.facultyTips]} pose="point" size={64} className="mb-5" />
+      <BitSays lines={[...BIT.facultyTips]} pose="idle" size={64} className="mb-5" />
       <form method="get" data-tour="filters" className="panel mb-4 flex flex-wrap items-end gap-3 p-4">
         <div className="min-w-48 flex-1">
           <label htmlFor="q" className="field-label">Search title or person</label>

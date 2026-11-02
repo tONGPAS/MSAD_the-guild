@@ -6,6 +6,7 @@ import {
   date,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   primaryKey,
@@ -49,6 +50,8 @@ export const users = pgTable(
     //First-run tutorial (FR-46): guided tour and the Training Grounds practice review
     tourDoneAt: ts("tour_done_at"),
     trainingDoneAt: ts("training_done_at"),
+  //Best findings per Training Grounds level, e.g. {"1":1,"2":2}; set when a level is submitted
+  trainingProgress: jsonb("training_progress").$type<Record<string, number>>().notNull().default({}),
     createdAt: ts("created_at").notNull().defaultNow(),
   },
   (t) => [index("users_pool_idx").on(t.role, t.status, t.lastAssignedAt)],

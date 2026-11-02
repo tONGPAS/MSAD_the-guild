@@ -1,89 +1,91 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { eq } from "drizzle-orm";
+import { db } from "@/db";
+import { users } from "@/db/schema";
 import { requireUser } from "@/modules/auth/session";
-import { BUGS, TRAINING, type BugKey } from "@/modules/tutorial/training";
-import { submitTraining } from "@/modules/tutorial/actions";
-import { CodeView } from "@/components/code-view";
-import { QuestBrief } from "@/components/quest-brief";
-import { ReviewForm } from "@/components/review-form";
-import { Squire } from "@/components/squire";
-import { Pip } from "@/components/pip";
+import { isUnlocked, LEVELS, type TrainingProgress } from "@/modules/tutorial/training";
+import { BitSays } from "@/components/bit-says";
 
 export const metadata: Metadata = { title: "Training Grounds" };
 
-const WORD_GOAL = 30;
-
-//FR-46: a practice review on planted bugs. Nothing here touches quests, XP, or the study data.
-export default async function TrainingPage({ searchParams }: PageProps<"/training">) {
+//FR-46: the level map. Levels open in order; each shows its best score as gems.
+export default async function TrainingMap() {
   const user = await requireUser();
-  const sp = await searchParams;
-  const home = user.role === "FACULTY" ? "/faculty/quests" : "/quests";
-
-  if (typeof sp.found === "string") {
-    const found = new Set(sp.found.split(",") as BugKey[]);
-    const words = Math.max(0, Number(sp.words) || 0);
-    const n = BUGS.filter((b) => found.has(b.key)).length;
-    const verdict = n === 3 ? "A perfect catch! You found all three." : n > 0 ? `Good eye! You caught ${n} of 3.` : "Those bugs were sneaky. Here is where they were hiding.";
-    return (
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold">Training Grounds: debrief</h1>
-        <section className="panel anim-pop flex flex-wrap items-end gap-4 p-5" style={{ backgroundImage: "radial-gradient(circle at 0% 0%, var(--gold-soft), transparent 60%)" }}>
-          <Squire pose={n >= 2 ? "cheer" : "think"} size={96} />
-          <div className="min-w-56 flex-1">
-            <p className="font-display text-2xl font-extrabold">{verdict}</p>
-            <p className="font-pixel mt-1 text-2xl text-gold">{n}/3 bugs</p>
-            <p className="text-muted">
-              You wrote {words} words. {words >= WORD_GOAL ? "That's the kind of detail that helps." : `Real reviews aim for ${WORD_GOAL} or more, so say why and how to fix it.`}
-            </p>
-          </div>
-        </section>
-        <ul className="grid gap-3">
-          {BUGS.map((b) => {
-            const got = found.has(b.key);
-            return (
-              <li key={b.key} className={`panel flex gap-3 p-4 ${got ? "border-ok/50" : "border-warn/50"}`}>
-                <span aria-hidden className={`font-pixel grid h-9 w-9 shrink-0 place-items-center rounded-full text-xl ${got ? "bg-ok-soft text-ok" : "bg-warn-soft text-warn"}`}>{got ? "✓" : "!"}</span>
-                <div className="min-w-0">
-                  <p className="font-bold">{b.name} <span className={`text-sm font-bold ${got ? "text-ok" : "text-warn"}`}>{got ? "Found" : "Missed"}</span></p>
-                  <code className="my-1 inline-block rounded bg-sunken px-1.5 py-0.5 font-mono text-sm break-all">{b.code}</code>
-                  <p>{b.why}</p>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-        <p className="text-sm text-muted">Pip checks for words that point at each bug, so a different way of saying it might not register. It is practice, so what matters is that you looked.</p>
-        <div className="flex flex-wrap gap-2">
-          <Link href={home} className="btn-primary">Back to my quests</Link>
-          <Link href="/training" className="btn-ghost">Try again</Link>
-        </div>
-      </div>
-    );
-  }
+  const [row] = await db.select({ p: users.trainingProgress }).from(users).where(eq(users.id, user.id));
+  const progress = (row?.p ?? {}) as TrainingProgress;
+  const cleared = LEVELS.filter((l) => progress[String(l.n) as "1"] !== undefined).length;
 
   return (
     <div className="space-y-6">
       <div>
         <p className="font-pixel text-sm text-muted">PRACTICE · NO XP</p>
         <h1 className="text-3xl font-bold">Training Grounds</h1>
-        <p className="text-muted">Review this sample like a real quest. Score it, then leave comments on anything wrong.</p>
+        <p className="text-muted">Three practice reviews. Each one teaches a different thing to look for. They open in order.</p>
       </div>
-      <Pip
-        pose="think" size={72}
+      <BitSays
+        pose={cleared === 3 ? "cheer" : "wave"} size={80}
         lines={[
-          "This code has three bugs hiding in it. Read the brief first: it tells you what the code should do.",
-          "Check the loop. How many times does it run when n is 3?",
-          "Look at the types in the division. What does int divided by int give you in C?",
-          "The brief mentions an empty list. What happens when n is 0?",
+          cleared === 3 ? "You cleared every level! Come back any time to beat your best score." : cleared ? `${cleared} of 3 cleared. On to the next one!` : "Welcome to the Training Grounds! Start with level 1. Each level is a short piece of C code to review.",
+          "Real reviews use the same rubric and comments, so this is exactly how it works for real.",
+          "Your score here is private and earns no XP. Mistakes are free!",
         ]}
       />
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem]">
-        <div className="min-w-0 space-y-4">
-          <QuestBrief context={TRAINING.context} notes={TRAINING.notes} by="Pip" />
-          <CodeView link={null} prTitle={null} prSize={null} snippet={TRAINING.snippet} image={null} />
-        </div>
-        <ReviewForm submit={submitTraining} />
-      </div>
+      <ol className="relative grid gap-4">
+        <span aria-hidden className="absolute top-8 bottom-8 left-[2.15rem] border-l-4 border-dashed border-line" />
+        {LEVELS.map((l) => {
+          const open = isUnlocked(progress, l.n);
+          const best = progress[String(l.n) as "1"];
+          const done = best !== undefined;
+          const body = (
+            <>
+              <span className={`font-pixel relative z-10 grid h-14 w-14 shrink-0 place-items-center rounded-full border-4 text-3xl ${done ? "border-gold-deep bg-gold-bright text-[#2b1d00]" : open ? "border-brand bg-surface text-brand" : "border-line bg-sunken text-muted"}`}>
+                {open ? l.n : <LockIcon />}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="flex flex-wrap items-baseline gap-x-2">
+                  <span className="font-display text-xl font-extrabold">{l.title}</span>
+                  <span className="text-sm font-bold text-muted">{l.tag}</span>
+                </span>
+                <span className="block text-muted">{open ? l.goal : `Finish level ${l.n - 1} to open this.`}</span>
+              </span>
+              {done ? (
+                <span className="flex shrink-0 flex-col items-end gap-1" aria-label={`Best: ${best} of ${l.findings.length} found`}>
+                  <span className="flex gap-1">{l.findings.map((f, i) => <Gem key={f.key} on={i < best} />)}</span>
+                  <span className="text-sm font-bold text-ok">Cleared</span>
+                </span>
+              ) : open ? (
+                <span className="btn-primary shrink-0">Start</span>
+              ) : null}
+            </>
+          );
+          return (
+            <li key={l.n} className="min-w-0">
+              {open ? (
+                <Link href={`/training/${l.n}`} className={`panel flex items-center gap-4 p-4 transition-transform hover:-translate-y-0.5 motion-reduce:hover:translate-y-0 ${done ? "border-gold" : ""}`}>{body}</Link>
+              ) : (
+                <div className="panel flex items-center gap-4 p-4 opacity-70" aria-disabled="true">{body}</div>
+              )}
+            </li>
+          );
+        })}
+      </ol>
     </div>
+  );
+}
+
+function Gem({ on }: { on: boolean }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden>
+      <path d="M10 1 L19 8 L10 19 L1 8 Z" fill={on ? "var(--gold-bright)" : "var(--line)"} stroke={on ? "var(--gold-deep)" : "var(--edge)"} strokeWidth="1.4" />
+    </svg>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden>
+      <rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    </svg>
   );
 }

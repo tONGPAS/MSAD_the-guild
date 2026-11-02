@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "training_progress" jsonb DEFAULT '{}'::jsonb NOT NULL;

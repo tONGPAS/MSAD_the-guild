@@ -203,19 +203,42 @@ code, pre, .font-mono {
   .anim-sparkle { animation: sparkle 1.2s ease-in-out both; }
 }
 
-/*Pip the squire: idle life. Off under reduced motion.*/
-@keyframes pip-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2.5px); } }
-@keyframes pip-blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
-@keyframes pip-wave { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-18deg); } }
-@keyframes pip-float { 0%, 100% { transform: translateY(0); opacity: 1; } 50% { transform: translateY(-4px); opacity: 0.7; } }
+/*Bit the slime. Every motion is anchored to the bottom so he squishes on the ground. Off under reduced motion.*/
+@keyframes bit-squish { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.035, 0.965); } }
+@keyframes bit-bounce { 0%, 100% { transform: translateY(0) scale(1.05, 0.95); } 45% { transform: translateY(-12px) scale(0.96, 1.05); } 70% { transform: translateY(0) scale(1.08, 0.92); } }
+@keyframes bit-hop { 0%, 60%, 100% { transform: translateY(0) scale(1, 1); } 15% { transform: translateY(0) scale(1.1, 0.88); } 32% { transform: translateY(-16px) scale(0.94, 1.06); } 48% { transform: translateY(0) scale(1.06, 0.94); } }
+@keyframes bit-breathe { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.04, 0.94); } }
+@keyframes bit-blink { 0%, 90%, 100% { transform: scaleY(1); } 94% { transform: scaleY(0.1); } }
+@keyframes bit-core { 0%, 100% { opacity: 0.75; transform: scale(0.92); } 50% { opacity: 1; transform: scale(1.12); } }
+@keyframes bit-wave { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-26deg); } }
+@keyframes bit-flap { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(14deg); } }
+@keyframes bit-bubbles { 0% { transform: translateY(0); } 100% { transform: translateY(-8px); } }
+@keyframes bit-snore { 0%, 100% { transform: scale(0.6); } 50% { transform: scale(1.15); } }
+@keyframes bit-twinkle { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.7); } }
+@keyframes bit-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@keyframes bit-shadow { 0%, 100% { transform: scaleX(1); } 40% { transform: scaleX(0.8); opacity: 0.6; } }
 @media (prefers-reduced-motion: no-preference) {
-  .pip-bob { animation: pip-bob 2.6s ease-in-out infinite; }
-  .pip-blink { animation: pip-blink 4.2s ease-in-out infinite; }
-  .pip-wave { animation: pip-wave 0.9s ease-in-out infinite; }
-  .pip-float { animation: pip-float 2s ease-in-out infinite; }
+  .bit-squish, .bit-bounce, .bit-hop, .bit-breathe, .bit-shadow { transform-box: fill-box; transform-origin: 50% 100%; }
+  .bit-blink, .bit-core, .bit-snore, .bit-twinkle, .bit-crown-jig { transform-box: fill-box; transform-origin: center; }
+  .bit-wave, .bit-flap { transform-box: fill-box; transform-origin: 50% 100%; }
+  .bit-squish { animation: bit-squish 2.8s ease-in-out infinite; }
+  .bit-bounce { animation: bit-bounce 0.9s ease-in-out infinite; }
+  .bit-hop { animation: bit-hop 1.6s ease-out infinite; }
+  .bit-breathe { animation: bit-breathe 4s ease-in-out infinite; }
+  .bit-blink { animation: bit-blink 4.4s ease-in-out infinite; }
+  .bit-core { animation: bit-core 2.4s ease-in-out infinite; }
+  .bit-core-hot { animation-duration: 0.7s; }
+  .bit-wave { animation: bit-wave 0.8s ease-in-out infinite; }
+  .bit-flap { animation: bit-flap 0.45s ease-in-out infinite; }
+  .bit-bubbles { animation: bit-bubbles 3s ease-in-out infinite alternate; }
+  .bit-snore { animation: bit-snore 4s ease-in-out infinite; }
+  .bit-twinkle { animation: bit-twinkle 1.4s ease-in-out infinite; }
+  .bit-crown-jig { animation: bit-wave 0.9s ease-in-out infinite reverse; transform-origin: 50% 100%; }
+  .bit-float { animation: bit-float 2s ease-in-out infinite; }
+  .bit-shadow { transform-origin: center; animation: bit-shadow 0.9s ease-in-out infinite; }
 }
 
-/*Speech bubble for Pip; the tail points down-left toward him*/
+/*Speech bubble for Bit; the tail points down-left toward him*/
 @utility speech {
   background: var(--surface);
   border: 2px solid var(--line);
@@ -238,7 +261,16 @@ code, pre, .font-mono {
 @utility speech-right {
   &::before { left: auto; right: -9px; transform: rotate(-135deg) skew(8deg, 8deg); }
 }
-@keyframes pip-hop { 0%, 100% { transform: translateY(0); } 35% { transform: translateY(-10px) rotate(-4deg); } 65% { transform: translateY(0) scaleY(0.94); } }
+@keyframes talk-hop { 0%, 100% { transform: translateY(0); } 35% { transform: translateY(-10px) rotate(-4deg); } 65% { transform: translateY(0) scaleY(0.94); } }
 @media (prefers-reduced-motion: no-preference) {
-  .pip-hop { animation: pip-hop 0.45s ease-out; }
+  .talk-hop { animation: talk-hop 0.45s ease-out; }
+}
+
+/*Code view: editor colours from Shiki plus line numbers. The code text itself is never changed.*/
+.code-editor pre.shiki { background: transparent !important; margin: 0; padding: 0.85rem 1rem 0.85rem 0; font-family: var(--font-mono), ui-monospace, monospace; font-size: 0.875rem; line-height: 1.65; tab-size: 4; counter-reset: line; width: max-content; min-width: 100%; }
+.code-editor pre.shiki code { display: block; }
+.code-editor .line { display: inline-block; min-width: 100%; }
+.code-editor .line::before { counter-increment: line; content: counter(line); display: inline-block; width: 3rem; padding-right: 1rem; margin-right: 0.75rem; text-align: right; color: var(--muted); opacity: 0.7; border-right: 2px solid var(--line); user-select: none; }
+@media (prefers-color-scheme: dark) {
+  .code-editor .shiki, .code-editor .shiki span { color: var(--shiki-dark) !important; }
 }

@@ -1,5 +1,5 @@
-import { Pip } from "@/components/pip";
-import { PIP } from "@/lib/pip-lines";
+import { BitSays } from "@/components/bit-says";
+import { BIT } from "@/lib/bit-lines";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser } from "@/modules/auth/session";
@@ -31,7 +31,7 @@ export default async function QuestBoardPage({ searchParams }: PageProps<"/board
       )}
       <p className="mb-3 text-sm text-muted">{rows.length} open, {staleCount} stale</p>
       {rows.length === 0 ? (
-        <div className="panel p-5"><Pip lines={[...PIP.boardEmpty]} pose="sleep" size={64} /></div>
+        <div className="panel p-5"><BitSays lines={[...BIT.boardEmpty]} pose="sleep" size={64} /></div>
       ) : (
         <ul className="panel divide-y divide-line">
           {rows.map((r) => {

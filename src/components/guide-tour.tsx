@@ -4,27 +4,27 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { finishTour } from "@/modules/tutorial/actions";
-import { Squire, type Pose } from "./squire";
+import { Bit, type Pose } from "./bit";
 
 type Step = { target?: string; title: string; body: string; pose: Pose };
 
 const STUDENT: Step[] = [
-  { title: "Hi, I'm Pip!", body: "I'm the Guild's squire. Let me show you around. It takes about a minute.", pose: "wave" },
-  { target: "hud", title: "Your rank", body: "This is your rank and XP. Reviewing, submitting, and helpful ratings fill this bar. Click it to see your profile and badges.", pose: "point" },
-  { target: "card", title: "Your adventurer card", body: "Your week streak, badges, quest rewards left today, and reviews waiting on you, all in one place.", pose: "point" },
+  { title: "Hi there!", body: "I'm Bit, the Guild's slime. Let me show you around. It takes about a minute.", pose: "wave" },
+  { target: "hud", title: "Your rank", body: "This is your rank and XP. Reviewing, submitting, and helpful ratings fill this bar. Click it to see your profile and badges.", pose: "idle" },
+  { target: "card", title: "Your adventurer card", body: "Your week streak, badges, quest rewards left today, and reviews waiting on you, all in one place.", pose: "idle" },
   { target: "todo", title: "Reviews assigned to you", body: "When the Guild picks you as a reviewer, the quest lands here. A classmate is waiting, so try to finish within 72 hours.", pose: "think" },
-  { target: "submit", title: "Get feedback on your code", body: "Submit a quest with a PR link or a snippet. Tell your reviewer what the code should do, and a classmate is picked for you in turn.", pose: "point" },
-  { target: "tabs", title: "Find your way", body: "The Quest Board shows what is open across the Guild. The Guild Hall lists every member and their badges.", pose: "point" },
-  { target: "bell", title: "Notifications", body: "New assignments, reviews of your code, and badges all ring this bell.", pose: "point" },
-  { title: "That's the tour!", body: "Want to try a practice review first? The Training Grounds has sample C code with hidden bugs. No XP, no pressure.", pose: "cheer" },
+  { target: "submit", title: "Get feedback on your code", body: "Submit a quest with a PR link or a snippet. Tell your reviewer what the code should do, and a classmate is picked for you in turn.", pose: "idle" },
+  { target: "tabs", title: "Find your way", body: "The Quest Board shows what is open across the Guild. The Guild Hall lists every member and their badges.", pose: "idle" },
+  { target: "bell", title: "Notifications", body: "New assignments, reviews of your code, and badges all ring this bell.", pose: "idle" },
+  { title: "That's the tour!", body: "Want to try a practice review first? The Training Grounds has three short levels of sample C code with hidden problems. No XP, no pressure.", pose: "cheer" },
 ];
 
 const FACULTY: Step[] = [
-  { title: "Welcome, Guild Master!", body: "I'm Pip, the Guild's squire. Here is a quick look at what you can do.", pose: "wave" },
-  { target: "hud", title: "Your rank", body: "Faculty sit above every student rank as Guild Masters. You earn no XP, so student numbers stay clean for the study.", pose: "point" },
-  { target: "tabs", title: "Your tools", body: "All quests lists every submission. Mentor requests is where students ask for your review. Dashboard shows the numbers, and Members is where you invite students.", pose: "point" },
+  { title: "Welcome, Guild Master!", body: "I'm Bit, the Guild's slime. Here is a quick look at what you can do.", pose: "wave" },
+  { target: "hud", title: "Your rank", body: "Faculty sit above every student rank as Guild Masters. You earn no XP, so student numbers stay clean for the study.", pose: "idle" },
+  { target: "tabs", title: "Your tools", body: "All quests lists every submission. Mentor requests is where students ask for your review. Dashboard shows the numbers, and Members is where you invite students.", pose: "idle" },
   { target: "filters", title: "Find any quest", body: "Search by title or person, and filter by status or difficulty.", pose: "think" },
-  { target: "bell", title: "Notifications", body: "Mentor requests and other news ring this bell.", pose: "point" },
+  { target: "bell", title: "Notifications", body: "Mentor requests and other news ring this bell.", pose: "idle" },
   { title: "You're all set!", body: "You can replay this tour any time with the ? button in the header.", pose: "cheer" },
 ];
 
@@ -114,7 +114,7 @@ export function GuideTour({ role, autoStart }: { role: "STUDENT" | "FACULTY"; au
         className={`fixed inset-x-3 mx-auto max-w-lg outline-none ${rect && !lowTarget ? "bottom-4" : rect ? "top-4" : "top-1/2 -translate-y-1/2"}`}
       >
         <div key={i} className="anim-pop flex items-end gap-2">
-          <Squire pose={step.pose} size={88} />
+          <Bit pose={step.pose} size={88} />
           <div className="panel mb-3 min-w-0 flex-1 p-4">
             <p className="font-pixel text-sm text-muted">Step {i + 1} of {steps.length}</p>
             <h2 id="tour-title" className="font-display text-xl font-extrabold">{step.title}</h2>

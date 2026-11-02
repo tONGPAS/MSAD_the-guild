@@ -8,8 +8,8 @@ import { userBadges, users } from "@/db/schema";
 import { submissionsPaidToday } from "@/modules/progression/service";
 import { AdventurerCard } from "@/components/adventurer-card";
 import { QuestRows } from "@/components/quest-rows";
-import { Pip } from "@/components/pip";
-import { PIP } from "@/lib/pip-lines";
+import { BitSays } from "@/components/bit-says";
+import { BIT } from "@/lib/bit-lines";
 
 export const metadata: Metadata = { title: "My quests" };
 
@@ -35,11 +35,11 @@ export default async function QuestsPage() {
         badges={badges?.n ?? 0} paidToday={paidToday} toReview={open.length}
       />
       </div>
-      <Pip lines={[...PIP.studentTips]} pose="point" size={72} />
+      <BitSays lines={[...BIT.studentTips]} pose="idle" size={72} />
       <section aria-labelledby="todo" data-tour="todo">
         <h2 id="todo" className="mb-1 text-2xl font-bold">Waiting for your review</h2>
         <p className="mb-4 text-muted">Quests the Guild assigned to you. Your classmates are waiting on these. {!user.trainingDone && <Link href="/training" className="font-bold text-brand underline">Practice first in the Training Grounds.</Link>}</p>
-        <QuestRows rows={open} href={(r) => `/quests/${r.refNo}/review`} empty={<Pip lines={[...PIP.noReviews]} pose="sleep" size={64} />} />
+        <QuestRows rows={open} href={(r) => `/quests/${r.refNo}/review`} empty={<BitSays lines={[...BIT.noReviews]} pose="sleep" size={64} />} />
       </section>
 
       <section aria-labelledby="mine">
@@ -50,7 +50,7 @@ export default async function QuestsPage() {
           </div>
           <Link href="/quests/new" data-tour="submit" className="btn-primary">Submit a quest</Link>
         </div>
-        <QuestRows rows={mine} empty={<Pip lines={[...PIP.noQuests]} pose="cheer" size={64} />} />
+        <QuestRows rows={mine} empty={<BitSays lines={[...BIT.noQuests]} pose="cheer" size={64} />} />
       </section>
 
       {done.length > 0 && (

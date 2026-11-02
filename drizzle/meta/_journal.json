@@ -29,6 +29,13 @@
       "when": 1793624348441,
       "tag": "0003_context_and_tutorial",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793626213981,
+      "tag": "0004_training_levels",
+      "breakpoints": true
     }
   ]
 }
