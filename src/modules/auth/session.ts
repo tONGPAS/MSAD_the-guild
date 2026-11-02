@@ -44,6 +44,8 @@ export type SessionUser = {
   consented: boolean;
   xpTotal: number;
   rank: string;
+  tourDone: boolean;
+  trainingDone: boolean;
 };
 
 //cache() dedupes this to one database read per request
@@ -79,6 +81,8 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
     consented: u.consentAt !== null,
     xpTotal: u.xpTotal,
     rank: u.rank,
+    tourDone: u.tourDoneAt !== null,
+    trainingDone: u.trainingDoneAt !== null,
   };
 });
 

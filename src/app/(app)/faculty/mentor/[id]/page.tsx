@@ -7,6 +7,7 @@ import { getRequest } from "@/modules/mentor/service";
 import { attachmentUrl } from "@/modules/quests/storage";
 import { DifficultyTag, StatusTag } from "@/components/badges";
 import { CodeView } from "@/components/code-view";
+import { QuestBrief } from "@/components/quest-brief";
 import { ReviewForm } from "@/components/review-form";
 import { formatRef } from "@/lib/rules";
 
@@ -42,7 +43,10 @@ export default async function MentorReviewPage({ params }: PageProps<"/faculty/m
         </p>
       </div>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem]">
-        <CodeView link={q.link} prTitle={q.prTitle} prSize={q.prSize} snippet={q.snippet} image={image} />
+        <div className="min-w-0 space-y-4">
+          <QuestBrief context={q.context} notes={q.notes} by={q.submitter.name} />
+          <CodeView link={q.link} prTitle={q.prTitle} prSize={q.prSize} snippet={q.snippet} image={image} />
+        </div>
         <ReviewForm submit={submitMentorReview.bind(null, mr.id)} />
       </div>
     </div>

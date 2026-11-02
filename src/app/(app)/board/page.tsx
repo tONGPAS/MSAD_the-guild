@@ -1,3 +1,5 @@
+import { Pip } from "@/components/pip";
+import { PIP } from "@/lib/pip-lines";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser } from "@/modules/auth/session";
@@ -29,7 +31,7 @@ export default async function QuestBoardPage({ searchParams }: PageProps<"/board
       )}
       <p className="mb-3 text-sm text-muted">{rows.length} open, {staleCount} stale</p>
       {rows.length === 0 ? (
-        <p className="panel p-6 text-muted">Nothing is waiting. Every quest has its feedback.</p>
+        <div className="panel p-5"><Pip lines={[...PIP.boardEmpty]} pose="sleep" size={64} /></div>
       ) : (
         <ul className="panel divide-y divide-line">
           {rows.map((r) => {

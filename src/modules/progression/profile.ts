@@ -63,3 +63,12 @@ export async function guildProfile(userId: string) {
 export async function recentXp(userId: string, limit = 20) {
   return db.select().from(xpEvents).where(eq(xpEvents.userId, userId)).orderBy(desc(xpEvents.createdAt)).limit(limit);
 }
+
+//Faculty, shown above the students in the Guild Hall
+export async function guildMasters() {
+  return db
+    .select({ id: users.id, name: users.name })
+    .from(users)
+    .where(and(eq(users.role, "FACULTY"), eq(users.status, "ACTIVE"), isNotNull(users.consentAt)))
+    .orderBy(asc(users.name));
+}

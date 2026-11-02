@@ -46,3 +46,18 @@ export function RankSeal({ xp, size = 40 }: { xp: number; size?: number }) {
     </span>
   );
 }
+
+//Faculty sit above every student rank. A display tier only: no XP, badges, or stats behind it,
+//so the student data used for the results chapter stays clean.
+export const GUILD_MASTER = "Guild Master";
+
+export function CrownEmblem({ size = 40 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" role="img" aria-label={`${GUILD_MASTER} rank`} className="shrink-0">
+      <path d="M20 2 L38 20 L20 38 L2 20 Z" fill="var(--brand-deep)" stroke="var(--gold-bright)" strokeWidth="2.5" />
+      <path d="M11 25 L12.5 15 L16.5 19 L20 12 L23.5 19 L27.5 15 L29 25 Z" fill="var(--gold-bright)" stroke="var(--gold-deep)" strokeWidth="1.2" strokeLinejoin="round" />
+      <rect x="11" y="25" width="18" height="3" rx="1" fill="var(--gold-bright)" stroke="var(--gold-deep)" strokeWidth="1" />
+      <circle cx="20" cy="12" r="1.6" fill="#fff" />
+    </svg>
+  );
+}

@@ -16,6 +16,11 @@ def check(name, cond):
 def sql(q):
     return subprocess.run(["psql", "-h", "localhost", "-U", "postgres", "guild", "-tAc", q], capture_output=True, text=True).stdout.strip()
 
+#The first-run tour (FR-46) is covered by e2e_tutorial.py; here it is marked done so it never covers the page
+def skip_tour(page):
+    sql("update users set tour_done_at = now() where tour_done_at is null")
+    page.reload(); page.wait_for_load_state("networkidle")
+
 def sign_in(page, email, pw):
     page.goto(BASE + "/signin")
     page.fill("#email", email)
@@ -37,6 +42,7 @@ with sync_playwright() as p:
     fac.screenshot(path=f"{SHOTS}/01-consent.png", full_page=True)
     fac.click("text=I agree, continue")
     fac.wait_for_url("**/faculty/quests")
+    skip_tour(fac)
     check("faculty lands on All quests", "/faculty/quests" in fac.url)
 
     codes = {}
@@ -67,6 +73,7 @@ with sync_playwright() as p:
         pg.wait_for_url("**/consent")
         pg.click("text=I agree, continue")
         pg.wait_for_url("**/quests")
+        skip_tour(pg)
         students[email] = pg
 
     check("three students registered and consented", len(students) == 3)
@@ -86,6 +93,7 @@ with sync_playwright() as p:
     #FR-10: confirmation required
     amy.goto(BASE + "/quests/new")
     amy.fill("#title", "Queue using linked list")
+    amy.fill("#context", "Adds a value to the tail of a linked-list queue.")
     amy.fill("#snippet", "void enqueue(Queue *q, int v) {\n  Node *n = malloc(sizeof(Node));\n  n->v = v; n->next = NULL;\n  q->tail->next = n;\n  q->tail = n;\n}")
     amy.evaluate("document.querySelector('input[name=confirm]').required=false")
     amy.click("text=Submit quest")
@@ -106,6 +114,7 @@ with sync_playwright() as p:
     #Second quest from Ben: round-robin should not reuse the reviewer who just got one if others are free
     ben.goto(BASE + "/quests/new")
     ben.fill("#title", "Bubble sort with early exit")
+    ben.fill("#context", "Sorts an int array and stops early when a pass makes no swaps.")
     ben.fill("#link", "https://github.com/octocat/Hello-World/pull/1")
     ben.check("input[name=confirm]")
     ben.click("text=Submit quest")

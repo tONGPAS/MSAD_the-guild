@@ -46,6 +46,9 @@ export const users = pgTable(
     lastAssignedAt: ts("last_assigned_at"),
     //Monday (Manila) of the last week the streak was evaluated, so the weekly step runs once per week (NFR-09)
     streakWeek: date("streak_week"),
+    //First-run tutorial (FR-46): guided tour and the Training Grounds practice review
+    tourDoneAt: ts("tour_done_at"),
+    trainingDoneAt: ts("training_done_at"),
     createdAt: ts("created_at").notNull().defaultNow(),
   },
   (t) => [index("users_pool_idx").on(t.role, t.status, t.lastAssignedAt)],
@@ -87,6 +90,9 @@ export const quests = pgTable(
     title: varchar("title", { length: 120 }).notNull(),
     link: varchar("link", { length: 300 }),
     snippet: varchar("snippet", { length: 10000 }),
+    //What the code should do (required for new quests) and optional asks for the reviewer
+    context: varchar("context", { length: 500 }),
+    notes: varchar("notes", { length: 1000 }),
     difficulty: difficultyEnum("difficulty").notNull(),
     status: questStatusEnum("status").notNull().default("PENDING"),
     prTitle: varchar("pr_title", { length: 300 }),

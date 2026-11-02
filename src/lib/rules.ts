@@ -86,6 +86,9 @@ export const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
 export const LIMITS = {
   name: 100,
   title: 120,
+  contextMin: 10,
+  context: 500,
+  notes: 1000,
   link: 300,
   snippet: 10000,
   comment: 2000,

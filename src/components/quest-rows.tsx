@@ -18,7 +18,7 @@ export type QuestRow = {
 
 //A quest as a loot card: the gem says how hard, the left gutter takes the rarity colour on hover
 export function QuestRows({ rows, empty, href = (r) => `/quests/${r.refNo}` }: { rows: QuestRow[]; empty: React.ReactNode; href?: (r: QuestRow) => string }) {
-  if (rows.length === 0) return <div className="panel p-6 text-muted">{empty}</div>;
+  if (rows.length === 0) return <div className="panel p-5 text-muted">{empty}</div>;
   return (
     <ul className="grid gap-2">
       {rows.map((r) => {

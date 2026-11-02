@@ -8,6 +8,8 @@ import { userBadges, users } from "@/db/schema";
 import { submissionsPaidToday } from "@/modules/progression/service";
 import { AdventurerCard } from "@/components/adventurer-card";
 import { QuestRows } from "@/components/quest-rows";
+import { Pip } from "@/components/pip";
+import { PIP } from "@/lib/pip-lines";
 
 export const metadata: Metadata = { title: "My quests" };
 
@@ -27,14 +29,17 @@ export default async function QuestsPage() {
   return (
     <div className="space-y-10">
       <h1 className="sr-only">My quests</h1>
+      <div data-tour="card">
       <AdventurerCard
         id={user.id} name={user.name} xp={user.xpTotal} streak={me?.streak ?? 0}
         badges={badges?.n ?? 0} paidToday={paidToday} toReview={open.length}
       />
-      <section aria-labelledby="todo">
+      </div>
+      <Pip lines={[...PIP.studentTips]} pose="point" size={72} />
+      <section aria-labelledby="todo" data-tour="todo">
         <h2 id="todo" className="mb-1 text-2xl font-bold">Waiting for your review</h2>
-        <p className="mb-4 text-muted">Quests the Guild assigned to you. Your classmates are waiting on these.</p>
-        <QuestRows rows={open} href={(r) => `/quests/${r.refNo}/review`} empty="Nothing to review right now. New quests are handed out in turn, so yours will come." />
+        <p className="mb-4 text-muted">Quests the Guild assigned to you. Your classmates are waiting on these. {!user.trainingDone && <Link href="/training" className="font-bold text-brand underline">Practice first in the Training Grounds.</Link>}</p>
+        <QuestRows rows={open} href={(r) => `/quests/${r.refNo}/review`} empty={<Pip lines={[...PIP.noReviews]} pose="sleep" size={64} />} />
       </section>
 
       <section aria-labelledby="mine">
@@ -43,9 +48,9 @@ export default async function QuestsPage() {
             <h2 id="mine" className="text-2xl font-bold">Your quests</h2>
             <p className="text-muted">Code you submitted for feedback.</p>
           </div>
-          <Link href="/quests/new" className="btn-primary">Submit a quest</Link>
+          <Link href="/quests/new" data-tour="submit" className="btn-primary">Submit a quest</Link>
         </div>
-        <QuestRows rows={mine} empty="You have not submitted any code yet. Submit a pull request link or a snippet to get a reviewer." />
+        <QuestRows rows={mine} empty={<Pip lines={[...PIP.noQuests]} pose="cheer" size={64} />} />
       </section>
 
       {done.length > 0 && (

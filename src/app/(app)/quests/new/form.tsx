@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { createQuest, type QuestFormState } from "@/modules/quests/actions";
 import { Gem, RARITY, type Difficulty } from "@/components/badges";
 import { SubmitButton } from "@/components/submit-button";
@@ -16,6 +16,7 @@ const LEVELS = (["EASY", "MEDIUM", "HARD"] as const).map((v) => ({ v, ...RARITY[
 export function NewQuestForm({ attachments, xpLeftToday }: { attachments: boolean; xpLeftToday: number }) {
   const [state, action] = useActionState<QuestFormState, FormData>(createQuest, {});
   const f = state.fields;
+  const [contextLen, setContextLen] = useState((f?.context ?? "").length);
   return (
     <form action={action} className="grid gap-6 lg:grid-cols-[1fr_18rem]">
       <div className="panel space-y-4 p-6">
@@ -35,7 +36,38 @@ export function NewQuestForm({ attachments, xpLeftToday }: { attachments: boolea
         </div>
       </div>
 
-      <div className="space-y-6">
+      {/*Reviews of code with no context come out vague; a sentence of intent makes them specific*/}
+      <fieldset className="panel space-y-4 p-6 lg:col-start-1">
+        <legend className="flex items-center gap-2 px-1 font-display text-lg font-extrabold">
+          <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden>
+            <path d="M5 3 H15 A3 3 0 0 1 18 6 V17 A2 2 0 0 0 20 19 H8 A3 3 0 0 1 5 16 Z" fill="var(--gold-soft)" stroke="var(--gold-deep)" strokeWidth="1.6" />
+            <path d="M8 8 H15 M8 11 H15 M8 14 H12" stroke="var(--gold-deep)" strokeWidth="1.6" strokeLinecap="round" />
+          </svg>
+          Brief your reviewer
+        </legend>
+        <div>
+          <label htmlFor="context" className="field-label">What should this code do?</label>
+          <textarea
+            id="context" name="context" required minLength={10} maxLength={500} rows={3} defaultValue={f?.context}
+            onChange={(e) => setContextLen(e.target.value.trim().length)}
+            placeholder="e.g. Reads up to 10 grades and prints the average. It should handle an empty list without crashing."
+            aria-describedby="context-hint" className="field"
+          />
+          <p id="context-hint" className={`mt-1 text-sm ${contextLen >= 10 ? "text-ok" : "text-muted"}`}>
+            {contextLen >= 10 ? "Good. Your reviewer knows what to check." : "A sentence or two is enough."} <span className="font-pixel">{contextLen}/500</span>
+          </p>
+        </div>
+        <div>
+          <label htmlFor="notes" className="field-label">Notes for your reviewer <span className="font-normal text-muted">(optional)</span></label>
+          <textarea
+            id="notes" name="notes" maxLength={1000} rows={3} defaultValue={f?.notes}
+            placeholder="e.g. I'm not sure my loop condition is right. Is there a cleaner way to free the list?"
+            className="field"
+          />
+        </div>
+      </fieldset>
+
+      <div className="space-y-6 lg:col-start-2 lg:row-span-2 lg:row-start-1">
         <fieldset className="panel p-5">
           <legend className="field-label px-1">Difficulty</legend>
           <p className="mb-2 text-sm text-muted">How hard was this to write? It tells your reviewer what to expect.</p>

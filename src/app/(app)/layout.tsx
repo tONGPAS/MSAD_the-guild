@@ -1,12 +1,13 @@
+import { Suspense } from "react";
 import Link from "next/link";
+import { GuideTour } from "@/components/guide-tour";
 import { signOut } from "@/modules/auth/actions";
 import { requireUser } from "@/modules/auth/session";
 import { pendingCount } from "@/modules/mentor/service";
 import { unreadCount } from "@/modules/notifications/service";
-import { Crest } from "@/components/crest";
 import { GuildMark } from "@/components/guild-mark";
 import { NavTabs, type NavItem } from "@/components/nav-tabs";
-import { RankEmblem, XpBar } from "@/components/rank-seal";
+import { CrownEmblem, GUILD_MASTER, RankEmblem, XpBar } from "@/components/rank-seal";
 import { rankProgress } from "@/lib/rules";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -40,8 +41,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             </Link>
 
             <div className="ml-auto flex items-center gap-2 sm:gap-3">
+              <Link href={`${isFaculty ? "/faculty/quests" : "/quests"}?tour=1`} className="grid h-9 w-9 place-items-center rounded-full border-2 border-white/40 font-display font-extrabold hover:bg-white/10" aria-label="Replay the guided tour" title="Replay the guided tour">?</Link>
               {/*EI-02: unread count on every signed-in page*/}
-              <Link href="/notifications" className="relative rounded-lg p-2 hover:bg-white/10" aria-label={`Notifications, ${unread} unread`}>
+              <Link href="/notifications" data-tour="bell" className="relative rounded-lg p-2 hover:bg-white/10" aria-label={`Notifications, ${unread} unread`}>
                 <svg aria-hidden viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0" />
                 </svg>
@@ -51,15 +53,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               </Link>
 
               {isFaculty ? (
-                <span className="flex items-center gap-2">
-                  <Crest id={user.id} name={user.name} size={30} ring />
+                <span data-tour="hud" className="flex items-center gap-2" title={GUILD_MASTER}>
+                  <CrownEmblem size={34} />
                   <span className="hidden leading-tight sm:block">
                     <span className="block text-sm font-bold">{user.name}</span>
-                    <span className="block text-xs text-gold-bright">Guild Master</span>
+                    <span className="block text-xs font-bold text-gold-bright">{GUILD_MASTER}</span>
                   </span>
                 </span>
               ) : (
-                <Link href="/profile" className="flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-white/10" title={prog.next ? `${prog.toNext} XP to ${prog.next}` : "Highest rank"}>
+                <Link href="/profile" data-tour="hud" className="flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-white/10" title={prog.next ? `${prog.toNext} XP to ${prog.next}` : "Highest rank"}>
                   <RankEmblem xp={user.xpTotal} size={32} />
                   <span className="w-24 leading-tight sm:w-40">
                     <span className="flex items-baseline justify-between gap-2 whitespace-nowrap">
@@ -80,10 +82,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               </form>
             </div>
           </div>
-          <NavTabs items={nav} />
+          <div data-tour="tabs"><NavTabs items={nav} /></div>
         </div>
       </header>
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">{children}</main>
+      <Suspense fallback={null}>
+        <GuideTour role={user.role} autoStart={!user.tourDone} />
+      </Suspense>
     </>
   );
 }

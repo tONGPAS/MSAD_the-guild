@@ -1,6 +1,7 @@
 import { rankProgress } from "@/lib/rules";
 import { Crest } from "./crest";
 import { RankEmblem } from "./rank-seal";
+import { Squire } from "./squire";
 
 type Props = {
   title: string;
@@ -43,6 +44,7 @@ export function RewardBurst({ title, message, xpGained, xpAfter, badges = [], su
           </div>
           <p className="mt-1 text-sm text-muted">{after.next ? `${after.toNext} XP to ${after.next}` : "Highest rank reached"}</p>
         </div>
+        {!summoned && <Squire pose="cheer" size={56} className="hidden sm:block" />}
         {summoned && (
           <div className="flex items-center gap-2 rounded-xl border-2 border-line bg-surface px-3 py-2">
             <Crest id={summoned.id} name={summoned.name} size={36} />

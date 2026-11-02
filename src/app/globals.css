@@ -202,3 +202,43 @@ code, pre, .font-mono {
   }
   .anim-sparkle { animation: sparkle 1.2s ease-in-out both; }
 }
+
+/*Pip the squire: idle life. Off under reduced motion.*/
+@keyframes pip-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2.5px); } }
+@keyframes pip-blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
+@keyframes pip-wave { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-18deg); } }
+@keyframes pip-float { 0%, 100% { transform: translateY(0); opacity: 1; } 50% { transform: translateY(-4px); opacity: 0.7; } }
+@media (prefers-reduced-motion: no-preference) {
+  .pip-bob { animation: pip-bob 2.6s ease-in-out infinite; }
+  .pip-blink { animation: pip-blink 4.2s ease-in-out infinite; }
+  .pip-wave { animation: pip-wave 0.9s ease-in-out infinite; }
+  .pip-float { animation: pip-float 2s ease-in-out infinite; }
+}
+
+/*Speech bubble for Pip; the tail points down-left toward him*/
+@utility speech {
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-bottom-width: 4px;
+  border-radius: 14px;
+  padding: 0.6rem 0.85rem;
+  &::before {
+    content: "";
+    position: absolute;
+    left: -9px;
+    bottom: 14px;
+    width: 16px;
+    height: 16px;
+    background: var(--surface);
+    border-left: 2px solid var(--line);
+    border-bottom: 2px solid var(--line);
+    transform: rotate(45deg) skew(8deg, 8deg);
+  }
+}
+@utility speech-right {
+  &::before { left: auto; right: -9px; transform: rotate(-135deg) skew(8deg, 8deg); }
+}
+@keyframes pip-hop { 0%, 100% { transform: translateY(0); } 35% { transform: translateY(-10px) rotate(-4deg); } 65% { transform: translateY(0) scaleY(0.94); } }
+@media (prefers-reduced-motion: no-preference) {
+  .pip-hop { animation: pip-hop 0.45s ease-out; }
+}

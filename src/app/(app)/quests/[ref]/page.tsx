@@ -7,11 +7,13 @@ import { attachmentUrl } from "@/modules/quests/storage";
 import { rateReview, replyToIssue, resolveQuest } from "@/modules/reviews/actions";
 import { DifficultyTag, StatusTag } from "@/components/badges";
 import { CodeView } from "@/components/code-view";
+import { QuestBrief } from "@/components/quest-brief";
 import { RewardBurst } from "@/components/reward-burst";
 import { db } from "@/db";
 import { justEarnedBadges } from "@/modules/progression/badges";
 import { CommentIcon, ScorePips } from "@/components/comment-icon";
 import { Crest } from "@/components/crest";
+import { CrownEmblem } from "@/components/rank-seal";
 import { SubmitButton } from "@/components/submit-button";
 import { FAST_RESOLVE_HOURS, formatRef, isStale, SUBMIT_XP_DAILY_CAP, XP } from "@/lib/rules";
 import { ago, stamp } from "@/lib/time";
@@ -137,6 +139,7 @@ export default async function QuestPage({ params, searchParams }: PageProps<"/qu
 
       <section aria-labelledby="code">
         <h2 id="code" className="mb-3 text-xl font-bold">Code</h2>
+        <div className="mb-4"><QuestBrief context={q.context} notes={q.notes} by={isSubmitter ? "you" : q.submitter.name} /></div>
         <CodeView link={q.link} prTitle={q.prTitle} prSize={q.prSize} snippet={q.snippet} image={image} />
       </section>
 
@@ -147,7 +150,11 @@ export default async function QuestPage({ params, searchParams }: PageProps<"/qu
               <Crest id={r.reviewer.id} name={r.reviewer.name} size={34} ring={r.isMentor} />
               <span>
                 Review by {r.reviewer.id === user.id ? "you" : r.reviewer.name}
-                {r.isMentor && <span className="ml-2 rounded-full bg-gold-soft px-2 py-0.5 align-middle text-sm font-bold text-gold">Faculty mentor</span>}
+                {r.isMentor && (
+                  <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-gold-soft px-2 py-0.5 align-middle text-sm font-bold text-gold">
+                    <CrownEmblem size={16} /> Faculty mentor
+                  </span>
+                )}
               </span>
             </h2>
             <span className="text-sm text-muted">{stamp(r.createdAt)}</span>

@@ -24,6 +24,11 @@ def cron(secret="testsecret"):
     except urllib.error.HTTPError as e:
         return e.code, None
 
+#The first-run tour (FR-46) is covered by e2e_tutorial.py; here it is marked done so it never covers the page
+def skip_tour(page):
+    sql("update users set tour_done_at = now() where tour_done_at is null")
+    page.reload(); page.wait_for_load_state("networkidle")
+
 def sign_in(page, email, pw):
     page.goto(BASE + "/signin")
     page.fill("#email", email); page.fill("#password", pw)
@@ -32,6 +37,7 @@ def sign_in(page, email, pw):
 def submit_quest(page, title, code):
     page.goto(BASE + "/quests/new")
     page.fill("#title", title); page.fill("#snippet", code)
+    page.fill("#context", "Should run without crashing on normal input.")
     page.check("input[name=confirm]"); page.click("text=Submit quest")
     page.wait_for_url("**/quests/*?submitted=*")
     return int(re.search(r"/quests/(\d+)", page.url).group(1))
@@ -51,7 +57,7 @@ with sync_playwright() as p:
 
     fac = ctx()
     sign_in(fac, "faculty@cit.edu", "ChangeMe-12345")
-    fac.click("text=I agree, continue"); fac.wait_for_url("**/faculty/quests")
+    fac.click("text=I agree, continue"); fac.wait_for_url("**/faculty/quests"); skip_tour(fac)
 
     codes = {}
     for email, role in [("fac2@cit.edu", "FACULTY"), ("amy@cit.edu", "STUDENT"), ("ben@cit.edu", "STUDENT"), ("cal@cit.edu", "STUDENT")]:
@@ -66,7 +72,7 @@ with sync_playwright() as p:
         pg.goto(f"{BASE}/register?code={codes[email]}")
         pg.fill("#name", name); pg.fill("#email", email); pg.fill("#password", "Password-123")
         pg.click("button[type=submit]"); pg.wait_for_url("**/consent")
-        pg.click("text=I agree, continue"); pg.wait_for_load_state("networkidle")
+        pg.click("text=I agree, continue"); pg.wait_for_load_state("networkidle"); skip_tour(pg)
         pages[email] = pg
     fac2, amy, ben, cal = pages["fac2@cit.edu"], pages["amy@cit.edu"], pages["ben@cit.edu"], pages["cal@cit.edu"]
     by_email = {"amy@cit.edu": amy, "ben@cit.edu": ben, "cal@cit.edu": cal}
@@ -168,7 +174,7 @@ with sync_playwright() as p:
 
     #---- Guild Hall (FR-31)
     amy.goto(BASE + "/guild")
-    names = [n.replace(" (you)", "").strip() for n in amy.locator("main li span.truncate").all_inner_texts()]
+    names = [n.replace(" (you)", "").strip() for n in amy.locator("ul[aria-label=Members] li span.truncate").all_inner_texts()]
     check(f"Guild Hall alphabetical, not a leaderboard {names}", names == sorted(names))
     amy.goto(BASE + "/profile"); amy.wait_for_url("**/guild/*")
     t = amy.inner_text("main")

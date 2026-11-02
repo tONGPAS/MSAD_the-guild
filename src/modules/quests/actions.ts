@@ -22,6 +22,12 @@ const questInput = z
     link: z.string().trim().max(LIMITS.link).optional(),
     snippet: z.string().max(LIMITS.snippet, "Snippets are limited to 10,000 characters.").optional(),
     difficulty: z.enum(["EASY", "MEDIUM", "HARD"], { message: "Pick a difficulty." }),
+    context: z
+      .string()
+      .trim()
+      .min(LIMITS.contextMin, "Say in a sentence what this code should do, so your reviewer knows what to check.")
+      .max(LIMITS.context, "Keep the context under 500 characters."),
+    notes: z.string().trim().max(LIMITS.notes, "Keep your notes under 1,000 characters.").optional(),
     confirm: z.literal("on", { message: "Confirm that this code is not graded or confidential." }),
   })
   .refine((v) => (v.link ?? "") !== "" || (v.snippet ?? "").trim() !== "", {
@@ -39,6 +45,8 @@ export async function createQuest(_: QuestFormState, form: FormData): Promise<Qu
     link: String(form.get("link") ?? ""),
     snippet: String(form.get("snippet") ?? ""),
     difficulty: String(form.get("difficulty") ?? ""),
+    context: String(form.get("context") ?? ""),
+    notes: String(form.get("notes") ?? ""),
   };
   const parsed = questInput.safeParse({ ...raw, confirm: form.get("confirm") ?? undefined });
   if (!parsed.success) return { error: parsed.error.issues[0].message, fields: raw };
@@ -66,6 +74,8 @@ export async function createQuest(_: QuestFormState, form: FormData): Promise<Qu
           link: d.link || null,
           snippet: d.snippet?.trim() ? d.snippet : null,
           difficulty: d.difficulty,
+          context: d.context,
+          notes: d.notes ? d.notes : null,
           prTitle: meta?.title ?? null,
           prSize: meta?.size ?? null,
           attachmentRef,
