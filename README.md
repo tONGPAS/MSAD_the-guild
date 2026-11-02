@@ -2,7 +2,7 @@
 
 CPE340 MSAD project for the Department of Computer Engineering, CIT-U. Students submit code ("quests"), the system assigns one classmate to review it in turn, the reviewer scores it on a rubric, and both earn XP. Faculty invite members and watch the activity.
 
-Built against **SRS v1.0 (October 23, 2026)**. This is **Release 1 (Core Flow)** from SRS Section 11, plus XP and rank from Release 3 because they were cheap to add.
+Built against **SRS v1.0 (October 23, 2026)** plus change request **CR-01** (pilot of 5 students and 1 faculty, daily submit-XP cap, first-run guidance). **Releases 1 to 3 from SRS Section 11 are built.** Release 4 is the pilot and UAT itself.
 
 ## Stack
 
@@ -44,8 +44,14 @@ Sign in with the seeded Faculty account, go to **Members**, and invite yourself 
 ### 3. Deploy to Vercel
 
 1. Push this repo to GitHub, then **Import Project** on [vercel.com](https://vercel.com).
-2. In **Settings > Environment Variables**, add `DATABASE_URL`, `DIRECT_URL`, and (if used) `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`. The `SEED_*` values are not needed there.
+2. In **Settings > Environment Variables**, add `DATABASE_URL` and (if used) `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`. Also add `CRON_SECRET` set to any long random text, so only Vercel can run the daily job. The `SEED_*` and `DIRECT_URL` values are not needed there.
 3. Deploy. Migrations are run from your laptop (`npm run db:migrate`), not by Vercel.
+
+The live app connects as `guild_app`, a database login that can read and write the app's tables but cannot create or drop them. Migrations use the main `postgres` login (`DIRECT_URL`). A new table needs `GRANT SELECT, INSERT, UPDATE, DELETE ON <table> TO guild_app;` in its migration.
+
+### The daily job
+
+`vercel.json` makes Vercel call `/api/cron/daily` once a day (09:17 Philippine time). It reassigns reviews 7 days overdue (FR-15), updates streaks once per week (FR-29), clears expired sessions, and keeps Supabase from pausing the database (free projects pause after 7 quiet days, which took the site down once). Every step is safe to run twice (NFR-09). To run it by hand: `curl -H "Authorization: Bearer $CRON_SECRET" https://<your-site>/api/cron/daily`.
 
 ## Changing the database
 
@@ -65,32 +71,37 @@ src/
     auth/                   M01: invitations, registration, sign-in, sessions, consent
     quests/                 M02: submission, round-robin assignment, lists, GitHub lookup, attachments
     reviews/                M03: rubric review, replies, helpful rating, resolve
-    progression/            M04: XP and rank
+    progression/            M04: XP, rank, badges, weekly streaks, Guild Hall profiles
+    mentor/                 M05: Mentor Requests, from request to faculty review
+    dashboard/              M06: turnaround, reviews per student, weekly counts, coded CSV
     notifications/          In-app notifications (SR-04)
   app/
     (public)/               SC-01 Register, SC-02 Sign in
     consent/                Privacy notice (FR-07)
     (app)/quests/           SC-03 New quest, SC-04 My quests, SC-05 Review form, SC-06 Quest detail
-    (app)/faculty/          SC-11 Members, early FR-41 All quests
-    (app)/profile/          Early SC-08 (own XP and rank)
+    (app)/board/            SC-07 Quest Board, Stale, Claim
+    (app)/guild/            SC-08 Guild Hall directory and profiles
+    (app)/faculty/mentor/   SC-09 Mentor Requests
+    (app)/faculty/dashboard SC-10 Faculty Dashboard
+    (app)/faculty/          SC-11 Members, FR-41 All quests with filters
+    api/cron/daily          SR-03 daily job
+    api/faculty/export      FR-45 CSV export
 ```
 
 Each module's `actions.ts` is what the pages call. Every action checks the user's session and role on the server first (SEC-04), so hiding a button is never the only protection.
 
 ## Requirement coverage
 
-**Done and tested end to end:** FR-01 to FR-14, FR-16 to FR-28, NFR-02, NFR-03, NFR-04, NFR-08, NFR-13 (quest visibility), NFR-14 (360 px), SEC-01 to SEC-09, SR-04, SR-05, SR-06, SR-07.
+**Built and tested end to end:** FR-01 to FR-45, plus the CR-01 submit-XP cap. NFR-02 to NFR-04, NFR-08, NFR-09, NFR-13, NFR-14 (360 px), SEC-01 to SEC-09, SR-03 to SR-07.
 
-Acceptance criteria exercised by the browser test: AC-01, AC-02, AC-03, AC-04, AC-05, AC-06, AC-07, AC-15, plus FR-05 session ending and FR-10 confirmation.
+**Not built yet:** FR-46 first-run guidance (CR-01) and the visual design pass. Both are planned before UAT. NFR-01, NFR-05 to NFR-07, NFR-10 to NFR-12 are proven during hardening and UAT rather than by code.
 
-**Not built yet:**
+### Tests
 
-| Release | Requirements |
-|---|---|
-| 2 (Dec 4) | FR-35 to FR-40 Mentor Requests, FR-42 to FR-44 dashboard, FR-41 filters |
-| 3 (Dec 9) | FR-15 reassignment, FR-29 streaks, FR-30 badges, FR-31 other profiles, FR-32 to FR-34 Quest Board, FR-45 export, SR-03 daily job |
+Two browser test suites, each run on a fresh local database with only the seeded faculty account:
 
-The tables for these already exist, so later releases add code, not schema rewrites.
+- `tests/e2e.py`, 29 checks: the core loop (AC-01 to AC-07, AC-15)
+- `tests/e2e_release23.py`, 55 checks: Mentor Requests, Quest Board, Stale and Claim, the daily job, streaks, badges, profiles, the dashboard, CSV export, and phone width
 
 ## Decisions worth knowing
 
@@ -100,4 +111,10 @@ The tables for these already exist, so later releases add code, not schema rewri
 - **A comment left in the text box without clicking Add** is still included when the review is submitted.
 - **Reviewer names are shown to submitters.** The SC-06 wireframe shows "Guildmate #7"; we chose real names to keep the person-to-person spirit. Change this before UAT if the instructor prefers anonymity.
 - **Invitations can be for Faculty too**, so a second instructor can join (AS-02).
+- **Missed review (streaks, FR-29):** a review taken away from you, either reassigned after 7 days or claimed by a classmate after 72 hours. A week with nothing assigned leaves a streak unchanged, so nobody loses one just for not being picked.
+- **Stale is live:** a quest shows Stale the moment it passes 72 hours, not at the next daily run.
+- **Guild Hall is alphabetical, not ranked.** Leaderboards are out of scope in SRS 1.4.
+- **A mentor review ends the peer reviewer's turn** if the quest was still In Review. That does not count as a missed review. Resolve is hidden while a mentor request is open.
+- **Faculty earn no XP.** Mentor reviews can be rated helpful, but only peer reviews pay XP.
+- **The CSV export** has one row per quest with codes (S01, F01) in place of names, comment word counts for OBJ3, and turnaround hours for OBJ2. Every export is written to the audit log.
 - **Privacy notice wording** in `src/app/consent/page.tsx` is a draft. Have the instructor confirm it before the pilot.

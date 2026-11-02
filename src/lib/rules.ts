@@ -29,6 +29,18 @@ export function manilaDayStart(now = Date.now()) {
   return new Date(Math.floor((now + MANILA_OFFSET_MS) / 86_400_000) * 86_400_000 - MANILA_OFFSET_MS);
 }
 
+//Weeks run Monday to Sunday, Manila time (streaks FR-29, dashboard FR-44)
+export function manilaWeekStart(now = Date.now()) {
+  const day = manilaDayStart(now);
+  const dow = new Date(day.getTime() + MANILA_OFFSET_MS).getUTCDay();
+  return new Date(day.getTime() - ((dow + 6) % 7) * 86_400_000);
+}
+
+//"YYYY-MM-DD" of a Manila calendar day, for date columns and labels
+export function manilaDateKey(d: Date) {
+  return new Date(d.getTime() + MANILA_OFFSET_MS).toISOString().slice(0, 10);
+}
+
 export const FAST_RESOLVE_HOURS = 48;
 
 export const RANKS = [
@@ -58,6 +70,14 @@ export function rankProgress(xp: number) {
 //BRL-08 (used by the Release 3 daily job)
 export const STALE_HOURS = 72;
 export const REASSIGN_DAYS = 7;
+
+export function isStale(status: string, assignedAt: Date | null, now = Date.now()) {
+  return status === "IN_REVIEW" && !!assignedAt && now - assignedAt.getTime() > STALE_HOURS * 3_600_000;
+}
+
+//BRL-06
+export const STREAK_BADGE_WEEKS = 3;
+export const HELPFUL_BADGE_COUNT = 10;
 
 //FR-09, SEC-06
 export const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;

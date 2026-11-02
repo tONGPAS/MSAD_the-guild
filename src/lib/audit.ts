@@ -16,7 +16,11 @@ export type AuditAction =
   | "ASSIGNMENT"
   | "STATUS_CHANGE"
   | "CLAIM"
-  | "EXPORT";
+  | "EXPORT"
+  | "MENTOR_REQUEST"
+  | "MENTOR_PICKUP"
+  | "MENTOR_REVIEW"
+  | "REASSIGN";
 
 export async function audit(db: DB, userId: string | null, action: AuditAction, target?: string) {
   await db.insert(auditLogs).values({ userId, action, target });

@@ -44,7 +44,7 @@ with sync_playwright() as p:
         fac.goto(BASE + "/faculty/users")
         fac.fill("#inv-email", email)
         fac.click("text=Create invitation")
-        fac.wait_for_selector("text=Invitation code created")
+        fac.wait_for_selector("text=Invitation created")
         codes[email] = re.search(r"GUILD-\w{5}-\w{5}", fac.inner_text("[role=status]")).group(0)
     check("three invitation codes issued (FR-04)", len(codes) == 3)
     fac.screenshot(path=f"{SHOTS}/02-members.png", full_page=True)
@@ -89,7 +89,7 @@ with sync_playwright() as p:
     amy.fill("#snippet", "void enqueue(Queue *q, int v) {\n  Node *n = malloc(sizeof(Node));\n  n->v = v; n->next = NULL;\n  q->tail->next = n;\n  q->tail = n;\n}")
     amy.evaluate("document.querySelector('input[name=confirm]').required=false")
     amy.click("text=Submit quest")
-    amy.wait_for_selector("text=not graded or confidential.", state="attached")
+    amy.wait_for_selector("[role=alert]")
     check("quest without not-graded confirmation is rejected (FR-10)", "/quests/new" in amy.url and "Confirm that" in amy.content())
 
     amy.check("input[name=confirm]")

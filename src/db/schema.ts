@@ -1,8 +1,9 @@
 //Data model from SRS v1.0 Section 7 (entities, data dictionary, ERD)
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   type AnyPgColumn,
   boolean,
+  date,
   index,
   integer,
   pgEnum,
@@ -43,6 +44,8 @@ export const users = pgTable(
     failedLogins: integer("failed_logins").notNull().default(0),
     lockedUntil: ts("locked_until"),
     lastAssignedAt: ts("last_assigned_at"),
+    //Monday (Manila) of the last week the streak was evaluated, so the weekly step runs once per week (NFR-09)
+    streakWeek: date("streak_week"),
     createdAt: ts("created_at").notNull().defaultNow(),
   },
   (t) => [index("users_pool_idx").on(t.role, t.status, t.lastAssignedAt)],
@@ -144,7 +147,28 @@ export const mentorRequests = pgTable(
     createdAt: ts("created_at").notNull().defaultNow(),
     resolvedAt: ts("resolved_at"),
   },
-  (t) => [index("mentor_status_idx").on(t.status, t.createdAt)],
+  (t) => [
+    index("mentor_status_idx").on(t.status, t.createdAt),
+    //At most one open request per quest; resolved ones stay as history
+    uniqueIndex("mentor_open_idx").on(t.questId).where(sql`status <> 'RESOLVED'`),
+  ],
+);
+
+export const reassignReasonEnum = pgEnum("reassign_reason", ["OVERDUE", "CLAIMED"]);
+
+//Every time a review is taken away from its reviewer (FR-15, FR-34). A row here is
+//what counts as a missed review for streaks (FR-29) and shows in the quest history.
+export const reassignments = pgTable(
+  "reassignments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    questId: uuid("quest_id").notNull().references(() => quests.id, { onDelete: "cascade" }),
+    fromReviewer: uuid("from_reviewer").notNull().references(() => users.id),
+    toReviewer: uuid("to_reviewer").notNull().references(() => users.id),
+    reason: reassignReasonEnum("reason").notNull(),
+    createdAt: ts("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("reassign_quest_idx").on(t.questId), index("reassign_from_idx").on(t.fromReviewer, t.createdAt)],
 );
 
 export const statusLogs = pgTable(
@@ -213,6 +237,8 @@ export const auditLogs = pgTable(
 export const usersRelations = relations(users, ({ many }) => ({
   questsSubmitted: many(quests, { relationName: "submitter" }),
   questsReviewing: many(quests, { relationName: "reviewer" }),
+  reassignedFrom: many(reassignments, { relationName: "reassignedFrom" }),
+  reassignedTo: many(reassignments, { relationName: "reassignedTo" }),
 }));
 
 export const questsRelations = relations(quests, ({ one, many }) => ({
@@ -220,6 +246,8 @@ export const questsRelations = relations(quests, ({ one, many }) => ({
   reviewer: one(users, { fields: [quests.reviewerId], references: [users.id], relationName: "reviewer" }),
   reviews: many(reviews),
   statusLogs: many(statusLogs),
+  mentorRequests: many(mentorRequests),
+  reassignments: many(reassignments),
 }));
 
 export const reviewsRelations = relations(reviews, ({ one, many }) => ({
@@ -233,6 +261,17 @@ export const commentsRelations = relations(comments, ({ one }) => ({
   author: one(users, { fields: [comments.authorId], references: [users.id] }),
 }));
 
+export const mentorRequestsRelations = relations(mentorRequests, ({ one }) => ({
+  quest: one(quests, { fields: [mentorRequests.questId], references: [quests.id] }),
+  handler: one(users, { fields: [mentorRequests.handledBy], references: [users.id] }),
+}));
+
+export const reassignmentsRelations = relations(reassignments, ({ one }) => ({
+  quest: one(quests, { fields: [reassignments.questId], references: [quests.id] }),
+  from: one(users, { fields: [reassignments.fromReviewer], references: [users.id], relationName: "reassignedFrom" }),
+  to: one(users, { fields: [reassignments.toReviewer], references: [users.id], relationName: "reassignedTo" }),
+}));
+
 export const statusLogsRelations = relations(statusLogs, ({ one }) => ({
   quest: one(quests, { fields: [statusLogs.questId], references: [quests.id] }),
   changer: one(users, { fields: [statusLogs.changedBy], references: [users.id] }),
@@ -242,3 +281,4 @@ export type User = typeof users.$inferSelect;
 export type Quest = typeof quests.$inferSelect;
 export type QuestStatus = (typeof questStatusEnum.enumValues)[number];
 export type Role = (typeof roleEnum.enumValues)[number];
+export type MentorStatus = (typeof mentorStatusEnum.enumValues)[number];

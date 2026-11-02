@@ -3,47 +3,20 @@
 import { and, eq, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { z } from "zod";
 import { db } from "@/db";
 import { comments, quests, reviews } from "@/db/schema";
 import { FAST_RESOLVE_HOURS, formatRef, LIMITS } from "@/lib/rules";
 import { requireUser } from "@/modules/auth/session";
 import { notify } from "@/modules/notifications/service";
 import { awardXp } from "@/modules/progression/service";
+import { hasOpenMentorRequest } from "@/modules/mentor/service";
 import { transition } from "@/modules/quests/service";
 
-export type ReviewFormState = { missing?: string[]; error?: string };
-
-const score = z.coerce.number().int().min(1).max(5);
-
-//FR-18 to FR-21, BRL-07: lists every missing item instead of stopping at the first
-function checkReview(raw: unknown) {
-  const missing: string[] = [];
-  const v = (raw ?? {}) as Record<string, unknown>;
-  const scores = {} as Record<"readability" | "correctness" | "structure", number>;
-  for (const k of ["readability", "correctness", "structure"] as const) {
-    const r = score.safeParse(v[k]);
-    if (r.success) scores[k] = r.data;
-    else missing.push(`A ${k} score from 1 to 5`);
-  }
-  const list = Array.isArray(v.comments) ? v.comments : [];
-  const cleaned = list
-    .map((c) => ({ kind: String((c as { kind?: unknown }).kind), body: String((c as { body?: unknown }).body ?? "").trim() }))
-    .filter((c) => (c.kind === "ISSUE" || c.kind === "PRAISE") && c.body.length > 0)
-    .map((c) => ({ kind: c.kind as "ISSUE" | "PRAISE", body: c.body.slice(0, LIMITS.comment) }));
-  if (cleaned.length === 0) missing.push("At least one Issue or Praise comment");
-  return { missing, scores, comments: cleaned };
-}
+import { checkReview, readPayload, type ReviewFormState } from "./rubric";
 
 export async function submitReview(questId: string, _: ReviewFormState, form: FormData): Promise<ReviewFormState> {
   const user = await requireUser({ role: "STUDENT" });
-  let payload: unknown;
-  try {
-    payload = JSON.parse(String(form.get("payload") ?? "{}"));
-  } catch {
-    payload = {};
-  }
-  const { missing, scores, comments: list } = checkReview(payload);
+  const { missing, scores, comments: list } = checkReview(readPayload(form));
   if (missing.length) return { missing };
 
   const result = await db.transaction(async (tx) => {
@@ -117,6 +90,7 @@ export async function resolveQuest(questId: string) {
   const user = await requireUser({ role: "STUDENT" });
   const q = await loadOwnQuest(questId, user.id);
   if (!q || q.status !== "COMPLETED") return;
+  if (await hasOpenMentorRequest(q.id)) return;
   const now = new Date();
   await db.transaction(async (tx) => {
     const moved = await transition(tx, questId, "COMPLETED", "RESOLVED", user.id, { resolvedAt: now });

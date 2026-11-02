@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { submitReview, type ReviewFormState } from "@/modules/reviews/actions";
+import type { ReviewFormState } from "@/modules/reviews/rubric";
 import { SubmitButton } from "@/components/submit-button";
 
 type Kind = "ISSUE" | "PRAISE";
@@ -17,8 +17,11 @@ type Key = (typeof CRITERIA)[number]["key"];
 //OBJ3 target: median written feedback of at least 30 words
 const WORD_GOAL = 30;
 
-export function ReviewForm({ questId }: { questId: string }) {
-  const [state, action] = useActionState<ReviewFormState, FormData>(submitReview.bind(null, questId), {});
+type ReviewAction = (state: ReviewFormState, form: FormData) => Promise<ReviewFormState>;
+
+//Shared by peer reviews (FR-18 to FR-21) and faculty mentor reviews (FR-39)
+export function ReviewForm({ submit }: { submit: ReviewAction }) {
+  const [state, action] = useActionState<ReviewFormState, FormData>(submit, {});
   const [scores, setScores] = useState<Partial<Record<Key, number>>>({});
   const [comments, setComments] = useState<Draft[]>([]);
   const [kind, setKind] = useState<Kind>("ISSUE");

@@ -1,22 +1,28 @@
 import Link from "next/link";
 import { signOut } from "@/modules/auth/actions";
 import { requireUser } from "@/modules/auth/session";
+import { pendingCount } from "@/modules/mentor/service";
 import { unreadCount } from "@/modules/notifications/service";
 import { RankSeal } from "@/components/rank-seal";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser();
-  const unread = await unreadCount(user.id);
-  const nav =
-    user.role === "STUDENT"
-      ? [
-          { href: "/quests", label: "My quests" },
-          { href: "/quests/new", label: "New quest" },
-        ]
-      : [
-          { href: "/faculty/quests", label: "All quests" },
-          { href: "/faculty/users", label: "Members" },
-        ];
+  const isFaculty = user.role === "FACULTY";
+  const [unread, mentorWaiting] = await Promise.all([unreadCount(user.id), isFaculty ? pendingCount() : Promise.resolve(0)]);
+  const nav: { href: string; label: string; count?: number }[] = isFaculty
+    ? [
+        { href: "/faculty/quests", label: "All quests" },
+        { href: "/faculty/mentor", label: "Mentor requests", count: mentorWaiting },
+        { href: "/faculty/dashboard", label: "Dashboard" },
+        { href: "/guild", label: "Guild Hall" },
+        { href: "/faculty/users", label: "Members" },
+      ]
+    : [
+        { href: "/quests", label: "My quests" },
+        { href: "/board", label: "Quest Board" },
+        { href: "/quests/new", label: "New quest" },
+        { href: "/guild", label: "Guild Hall" },
+      ];
 
   return (
     <>
@@ -25,7 +31,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <Link href="/" className="font-display text-xl font-bold">The Guild</Link>
           <nav aria-label="Main" className="flex flex-wrap gap-1">
             {nav.map((n) => (
-              <Link key={n.href} href={n.href} className="rounded-md px-3 py-2 font-bold hover:bg-white/15">{n.label}</Link>
+              <Link key={n.href} href={n.href} className="rounded-md px-3 py-2 font-bold hover:bg-white/15">
+                {n.label}
+                {!!n.count && <span className="ml-1.5 inline-block min-w-6 rounded-full bg-gold px-1.5 text-center text-sm text-ink" aria-label={`${n.count} waiting`}>{n.count}</span>}
+              </Link>
             ))}
           </nav>
           <div className="ml-auto flex items-center gap-1 sm:gap-3">

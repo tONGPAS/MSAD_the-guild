@@ -8,8 +8,9 @@ import { rateReview, replyToIssue, resolveQuest } from "@/modules/reviews/action
 import { DifficultyTag, StatusTag } from "@/components/badges";
 import { CodeView } from "@/components/code-view";
 import { SubmitButton } from "@/components/submit-button";
-import { FAST_RESOLVE_HOURS, formatRef, SUBMIT_XP_DAILY_CAP } from "@/lib/rules";
+import { FAST_RESOLVE_HOURS, formatRef, isStale, SUBMIT_XP_DAILY_CAP } from "@/lib/rules";
 import { ago, stamp } from "@/lib/time";
+import { MentorRequestForm } from "./mentor-form";
 
 export const metadata: Metadata = { title: "Quest" };
 
@@ -28,8 +29,33 @@ export default async function QuestPage({ params, searchParams }: PageProps<"/qu
   const view = await getQuestForViewer(refNo, user);
   //Same response for "missing" and "not yours", so quest numbers cannot be probed (NFR-13)
   if (!view) notFound();
-  const { quest: q, isSubmitter, isReviewer } = view;
+  const { quest: q, isSubmitter, isReviewer, isFaculty } = view;
   const image = q.attachmentRef ? await attachmentUrl(q.attachmentRef) : null;
+  const openMentor = q.mentorRequests.find((m) => m.status !== "RESOLVED");
+  const stale = isStale(q.status, q.assignedAt);
+  const history = [
+    ...q.statusLogs.map((s) => ({
+      id: s.id,
+      at: s.changedAt,
+      text: (
+        <>
+          {s.fromStatus ? <>Moved to <strong>{label(s.toStatus)}</strong></> : <>Quest created</>}
+          {s.changer ? <> by {s.changedBy === user.id ? "you" : s.changer.name}</> : <> automatically</>}
+        </>
+      ),
+    })),
+    ...q.reassignments.map((r) => ({
+      id: r.id,
+      at: r.createdAt,
+      text: r.reason === "CLAIMED"
+        ? <>Claimed by {r.to.name} from {r.from.name} after it went stale</>
+        : <>Reassigned from {r.from.name} to {r.to.name}: review was 7 days overdue</>,
+    })),
+    ...q.mentorRequests.map((m) => ({ id: `${m.id}-c`, at: m.createdAt, text: <>Mentor review requested</> })),
+    ...q.mentorRequests
+      .filter((m) => m.resolvedAt)
+      .map((m) => ({ id: `${m.id}-r`, at: m.resolvedAt!, text: <>Mentor review done by {m.handler?.name ?? "faculty"}</> })),
+  ].sort((a, b) => a.at.getTime() - b.at.getTime());
 
   return (
     <div className="space-y-8">
@@ -39,6 +65,7 @@ export default async function QuestPage({ params, searchParams }: PageProps<"/qu
         </p>
       )}
       {sp.reviewed && <p role="status" className="rounded-md bg-ok-soft p-4 text-ok">Review sent. You earned 25 XP.</p>}
+      {sp.mentored && <p role="status" className="rounded-md bg-ok-soft p-4 text-ok">Mentor review saved. The student has been notified.</p>}
 
       <header>
         <p className="font-mono text-sm text-muted">{formatRef(q.refNo)}</p>
@@ -48,8 +75,23 @@ export default async function QuestPage({ params, searchParams }: PageProps<"/qu
           <DifficultyTag level={q.difficulty} />
           <span className="text-muted">Submitted by {isSubmitter ? "you" : q.submitter.name}, {ago(q.createdAt)}</span>
           <span className="text-muted">Reviewer: {q.reviewer ? (isReviewer ? "you" : q.reviewer.name) : "not assigned yet"}</span>
+          {stale && <span className="rounded-full bg-danger-soft px-2.5 py-0.5 text-sm font-bold text-danger">Stale, over 72 h</span>}
         </div>
       </header>
+
+      {openMentor && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-gold bg-gold-soft p-4">
+          <p>
+            {openMentor.status === "PENDING"
+              ? <><strong>Mentor review requested.</strong> Waiting for a faculty member to pick it up.</>
+              : <><strong>{openMentor.handler?.id === user.id ? "You are" : `${openMentor.handler?.name} is`} doing a mentor review.</strong></>}
+          </p>
+          {isFaculty && openMentor.status === "PENDING" && <Link href="/faculty/mentor" className="btn-primary">Open mentor requests</Link>}
+          {isFaculty && openMentor.status === "IN_PROGRESS" && openMentor.handler?.id === user.id && (
+            <Link href={`/faculty/mentor/${openMentor.id}`} className="btn-primary">Continue mentor review</Link>
+          )}
+        </div>
+      )}
 
       {isReviewer && q.status === "IN_REVIEW" && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-warn/40 bg-warn-soft p-4">
@@ -123,7 +165,9 @@ export default async function QuestPage({ params, searchParams }: PageProps<"/qu
         </section>
       ))}
 
-      {isSubmitter && q.status === "COMPLETED" && (
+      {isSubmitter && !openMentor && (q.status === "IN_REVIEW" || q.status === "COMPLETED") && <MentorRequestForm questId={q.id} />}
+
+      {isSubmitter && q.status === "COMPLETED" && !openMentor && (
         <section className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-brand/30 bg-brand-soft p-5">
           <div>
             <p className="font-bold">Done with this feedback?</p>
@@ -138,13 +182,10 @@ export default async function QuestPage({ params, searchParams }: PageProps<"/qu
       <section aria-labelledby="history">
         <h2 id="history" className="mb-3 text-xl font-bold">History</h2>
         <ol className="panel divide-y divide-line text-sm">
-          {q.statusLogs.map((s) => (
-            <li key={s.id} className="flex flex-wrap justify-between gap-2 px-4 py-2">
-              <span>
-                {s.fromStatus ? <>Moved to <strong>{label(s.toStatus)}</strong></> : <>Quest created</>}
-                {s.changer ? <> by {s.changedBy === user.id ? "you" : s.changer.name}</> : <> automatically</>}
-              </span>
-              <span className="text-muted">{stamp(s.changedAt)}</span>
+          {history.map((h) => (
+            <li key={h.id} className="flex flex-wrap justify-between gap-2 px-4 py-2">
+              <span>{h.text}</span>
+              <span className="text-muted">{stamp(h.at)}</span>
             </li>
           ))}
         </ol>

@@ -15,6 +15,13 @@
       "when": 1792915784969,
       "tag": "0001_lock_data_api",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793617331409,
+      "tag": "0002_release2_3",
+      "breakpoints": true
     }
   ]
 }

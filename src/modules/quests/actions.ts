@@ -1,15 +1,17 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { quests, statusLogs } from "@/db/schema";
 import { audit } from "@/lib/audit";
-import { LIMITS, SUBMIT_XP_DAILY_CAP } from "@/lib/rules";
+import { isStale, LIMITS, SUBMIT_XP_DAILY_CAP } from "@/lib/rules";
 import { requireUser } from "@/modules/auth/session";
 import { awardXp, submissionsPaidToday } from "@/modules/progression/service";
 import { fetchPrMeta, isPullRequestUrl } from "./github";
-import { assignPending } from "./service";
+import { assignPending, moveReviewer } from "./service";
 import { removeAttachment, uploadAttachment } from "./storage";
 
 export type QuestFormState = { error?: string; fields?: Record<string, string> };
@@ -86,4 +88,21 @@ export async function createQuest(_: QuestFormState, form: FormData): Promise<Qu
   }
 
   redirect(`/quests/${result.refNo}?submitted=${result.paid ? "1" : "nox"}`);
+}
+
+//FR-34: any Student except the submitter and the current reviewer may take over a Stale quest
+export async function claimQuest(questId: string) {
+  const user = await requireUser({ role: "STUDENT" });
+  const refNo = await db.transaction(async (tx) => {
+    const [q] = await tx.select().from(quests).where(eq(quests.id, questId)).for("update").limit(1);
+    if (!q || !isStale(q.status, q.assignedAt)) return null;
+    if (q.submitterId === user.id || q.reviewerId === user.id) return null;
+    await moveReviewer(tx, q, user.id, "CLAIMED");
+    return q.refNo;
+  });
+  if (refNo === null) {
+    revalidatePath("/board");
+    redirect("/board?claim=gone");
+  }
+  redirect(`/quests/${refNo}/review`);
 }
