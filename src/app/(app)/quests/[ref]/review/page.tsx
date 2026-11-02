@@ -6,7 +6,7 @@ import { getQuestForViewer } from "@/modules/quests/service";
 import { attachmentUrl } from "@/modules/quests/storage";
 import { DifficultyTag } from "@/components/badges";
 import { CodeView } from "@/components/code-view";
-import { formatRef } from "@/lib/rules";
+import { formatRef, XP } from "@/lib/rules";
 import { ReviewForm } from "@/components/review-form";
 import { submitReview } from "@/modules/reviews/actions";
 
@@ -36,7 +36,7 @@ export default async function ReviewPage({ params }: PageProps<"/quests/[ref]/re
       </div>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem]">
         <CodeView link={q.link} prTitle={q.prTitle} prSize={q.prSize} snippet={q.snippet} image={image} />
-        <ReviewForm submit={submitReview.bind(null, q.id)} />
+        <ReviewForm submit={submitReview.bind(null, q.id)} xp={XP.COMPLETE_REVIEW} />
       </div>
     </div>
   );

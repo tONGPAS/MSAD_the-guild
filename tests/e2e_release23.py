@@ -109,7 +109,7 @@ with sync_playwright() as p:
     check("peer reviewer told their review is no longer needed", sql(f"select count(*) from notifications n join users u on u.id=n.user_id where u.email='{peer1}' and n.message like '%no longer needed%'") == "1")
     check("faculty earn no XP for mentoring", sql("select xp_total from users where email='faculty@cit.edu'") == "0")
     amy.goto(f"{BASE}/quests/{q1}")
-    check("mentor review shown to submitter, labelled", "(faculty mentor)" in amy.inner_text("main") and "Mark resolved" in amy.inner_text("main"))
+    check("mentor review shown to submitter, labelled", "Faculty mentor" in amy.inner_text("main") and "Mark resolved" in amy.inner_text("main"))
     amy.screenshot(path=f"{SHOTS}/r2-quest-after-mentor.png", full_page=True)
 
     #---- Quest Board, Stale, Claim (FR-32 to FR-34)

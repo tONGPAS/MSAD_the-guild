@@ -7,8 +7,13 @@ import { attachmentUrl } from "@/modules/quests/storage";
 import { rateReview, replyToIssue, resolveQuest } from "@/modules/reviews/actions";
 import { DifficultyTag, StatusTag } from "@/components/badges";
 import { CodeView } from "@/components/code-view";
+import { RewardBurst } from "@/components/reward-burst";
+import { db } from "@/db";
+import { justEarnedBadges } from "@/modules/progression/badges";
+import { CommentIcon, ScorePips } from "@/components/comment-icon";
+import { Crest } from "@/components/crest";
 import { SubmitButton } from "@/components/submit-button";
-import { FAST_RESOLVE_HOURS, formatRef, isStale, SUBMIT_XP_DAILY_CAP } from "@/lib/rules";
+import { FAST_RESOLVE_HOURS, formatRef, isStale, SUBMIT_XP_DAILY_CAP, XP } from "@/lib/rules";
 import { ago, stamp } from "@/lib/time";
 import { MentorRequestForm } from "./mentor-form";
 
@@ -32,6 +37,7 @@ export default async function QuestPage({ params, searchParams }: PageProps<"/qu
   const { quest: q, isSubmitter, isReviewer, isFaculty } = view;
   const image = q.attachmentRef ? await attachmentUrl(q.attachmentRef) : null;
   const openMentor = q.mentorRequests.find((m) => m.status !== "RESOLVED");
+  const earned = sp.submitted || sp.reviewed || sp.resolved ? await justEarnedBadges(db, user.id) : [];
   const stale = isStale(q.status, q.assignedAt);
   const history = [
     ...q.statusLogs.map((s) => ({
@@ -60,22 +66,51 @@ export default async function QuestPage({ params, searchParams }: PageProps<"/qu
   return (
     <div className="space-y-8">
       {sp.submitted && (
-        <p role="status" className="rounded-md bg-ok-soft p-4 text-ok">
-          Quest submitted. {q.reviewer ? <>{q.reviewer.name} has been assigned to review it.</> : <>No reviewer is free yet, so it will be assigned as soon as one joins.</>} {sp.submitted === "nox" ? <>No XP this time: only your first {SUBMIT_XP_DAILY_CAP} quests each day earn XP.</> : <>You earned 10 XP.</>}
-        </p>
+        <RewardBurst
+          title="Quest submitted!"
+          xpGained={sp.submitted === "nox" ? 0 : XP.SUBMIT_QUEST}
+          xpAfter={user.xpTotal}
+          badges={earned}
+          summoned={q.reviewer ? { id: q.reviewer.id, name: q.reviewer.name } : undefined}
+          message={
+            <>
+              {q.reviewer ? "A classmate has been picked to review it." : "No reviewer is free yet; one is picked as soon as a classmate joins."}{" "}
+              {sp.submitted === "nox" && <>You already earned quest XP {SUBMIT_XP_DAILY_CAP} times today.</>}
+            </>
+          }
+        />
       )}
-      {sp.reviewed && <p role="status" className="rounded-md bg-ok-soft p-4 text-ok">Review sent. You earned 25 XP.</p>}
+      {sp.reviewed && (
+        <RewardBurst title="Review delivered!" message="Your classmate has been notified. Thanks for helping them level up." xpGained={XP.COMPLETE_REVIEW} xpAfter={user.xpTotal} badges={earned} />
+      )}
+      {sp.resolved && (
+        <RewardBurst
+          title="Quest complete!"
+          message={sp.resolved === "fast" ? `Resolved within ${FAST_RESOLVE_HOURS} hours, so you earned the quick-finish bonus.` : "Feedback received and closed."}
+          xpGained={sp.resolved === "fast" ? XP.RESOLVE_FAST : 0}
+          xpAfter={user.xpTotal}
+          badges={earned}
+        />
+      )}
       {sp.mentored && <p role="status" className="rounded-md bg-ok-soft p-4 text-ok">Mentor review saved. The student has been notified.</p>}
 
       <header>
         <p className="font-mono text-sm text-muted">{formatRef(q.refNo)}</p>
-        <h1 className="mb-3 text-3xl font-bold">{q.title}</h1>
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+        <h1 className="mb-3 text-3xl font-extrabold">{q.title}</h1>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
           <StatusTag status={q.status} />
           <DifficultyTag level={q.difficulty} />
-          <span className="text-muted">Submitted by {isSubmitter ? "you" : q.submitter.name}, {ago(q.createdAt)}</span>
-          <span className="text-muted">Reviewer: {q.reviewer ? (isReviewer ? "you" : q.reviewer.name) : "not assigned yet"}</span>
           {stale && <span className="rounded-full bg-danger-soft px-2.5 py-0.5 text-sm font-bold text-danger">Stale, over 72 h</span>}
+        </div>
+        {/*The two people this quest is about, face to face*/}
+        <div className="panel mt-4 flex flex-wrap items-center gap-x-4 gap-y-3 p-3">
+          <Person id={q.submitter.id} name={q.submitter.name} label={isSubmitter ? "You" : q.submitter.name} role={`Submitted ${ago(q.createdAt)}`} />
+          <svg width="40" height="16" viewBox="0 0 40 16" aria-hidden className="text-muted">
+            <path d="M2 8 H34 M28 2 L36 8 L28 14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray={q.reviewer ? undefined : "4 4"} />
+          </svg>
+          {q.reviewer
+            ? <Person id={q.reviewer.id} name={q.reviewer.name} label={isReviewer ? "You" : q.reviewer.name} role="Reviewer" />
+            : <span className="text-sm text-muted">Waiting for a reviewer to join</span>}
         </div>
       </header>
 
@@ -107,10 +142,13 @@ export default async function QuestPage({ params, searchParams }: PageProps<"/qu
 
       {q.reviews.map((r) => (
         <section key={r.id} aria-labelledby={`rev-${r.id}`} className="space-y-4">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 id={`rev-${r.id}`} className="text-xl font-bold">
-              Review by {r.reviewer.id === user.id ? "you" : r.reviewer.name}
-              {r.isMentor && <span className="ml-2 text-base font-normal text-muted">(faculty mentor)</span>}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 id={`rev-${r.id}`} className="flex items-center gap-3 text-xl font-bold">
+              <Crest id={r.reviewer.id} name={r.reviewer.name} size={34} ring={r.isMentor} />
+              <span>
+                Review by {r.reviewer.id === user.id ? "you" : r.reviewer.name}
+                {r.isMentor && <span className="ml-2 rounded-full bg-gold-soft px-2 py-0.5 align-middle text-sm font-bold text-gold">Faculty mentor</span>}
+              </span>
             </h2>
             <span className="text-sm text-muted">{stamp(r.createdAt)}</span>
           </div>
@@ -119,7 +157,7 @@ export default async function QuestPage({ params, searchParams }: PageProps<"/qu
             {CRITERIA.map(([k, label]) => (
               <div key={k} className="panel p-4">
                 <dt className="text-sm text-muted">{label}</dt>
-                <dd className="font-display text-2xl font-bold">{r[k]}<span className="text-base text-muted">/5</span></dd>
+                <dd className="mt-1"><ScorePips value={r[k]} /></dd>
               </div>
             ))}
           </dl>
@@ -128,8 +166,11 @@ export default async function QuestPage({ params, searchParams }: PageProps<"/qu
             {r.comments.filter((c) => c.kind !== "REPLY").map((c) => {
               const replies = r.comments.filter((x) => x.parentId === c.id);
               return (
-                <li key={c.id} className={`rounded-lg border-l-4 bg-surface p-4 ${c.kind === "ISSUE" ? "border-danger" : "border-ok"}`}>
-                  <p className={`mb-1 text-sm font-bold ${c.kind === "ISSUE" ? "text-danger" : "text-ok"}`}>{c.kind === "ISSUE" ? "Issue" : "Praise"}</p>
+                <li key={c.id} className={`panel p-4 ${c.kind === "ISSUE" ? "border-danger/40" : "border-gold/50"}`}>
+                  <p className={`mb-1 flex items-center gap-1.5 text-sm font-bold ${c.kind === "ISSUE" ? "text-danger" : "text-gold"}`}>
+                    <CommentIcon kind={c.kind as "ISSUE" | "PRAISE"} />
+                    {c.kind === "ISSUE" ? "Issue" : "Praise"}
+                  </p>
                   <p className="whitespace-pre-wrap">{c.body}</p>
                   {replies.map((rep) => (
                     <div key={rep.id} className="mt-3 border-l-2 border-line pl-3">
@@ -196,4 +237,16 @@ export default async function QuestPage({ params, searchParams }: PageProps<"/qu
 
 function label(s: string) {
   return { PENDING: "Pending", IN_REVIEW: "In Review", COMPLETED: "Completed", RESOLVED: "Resolved" }[s] ?? s;
+}
+
+function Person({ id, name, label, role }: { id: string; name: string; label: string; role: string }) {
+  return (
+    <span className="flex items-center gap-2">
+      <Crest id={id} name={name} size={34} />
+      <span className="leading-tight">
+        <span className="block font-bold">{label}</span>
+        <span className="block text-xs text-muted">{role}</span>
+      </span>
+    </span>
+  );
 }

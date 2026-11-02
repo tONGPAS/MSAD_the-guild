@@ -36,6 +36,7 @@ export async function submitReview(questId: string, _: ReviewFormState, form: Fo
   });
 
   if ("error" in result) return { error: result.error };
+  revalidatePath("/", "layout");
   redirect(`/quests/${result.refNo}?reviewed=1`);
 }
 
@@ -92,12 +93,18 @@ export async function resolveQuest(questId: string) {
   if (!q || q.status !== "COMPLETED") return;
   if (await hasOpenMentorRequest(q.id)) return;
   const now = new Date();
-  await db.transaction(async (tx) => {
+  const outcome = await db.transaction(async (tx) => {
     const moved = await transition(tx, questId, "COMPLETED", "RESOLVED", user.id, { resolvedAt: now });
-    if (!moved) return;
-    const fast = q.completedAt && now.getTime() - q.completedAt.getTime() <= FAST_RESOLVE_HOURS * 3_600_000;
+    if (!moved) return null;
+    const fast = !!q.completedAt && now.getTime() - q.completedAt.getTime() <= FAST_RESOLVE_HOURS * 3_600_000;
     if (fast) await awardXp(tx, user.id, "RESOLVE_FAST", questId);
     if (q.reviewerId) await notify(tx, q.reviewerId, `${formatRef(q.refNo)} was marked Resolved. Nice work.`, questId);
+    return fast ? "fast" : "1";
   });
-  revalidatePath(`/quests/${q.refNo}`);
+  if (!outcome) {
+    revalidatePath(`/quests/${q.refNo}`);
+    return;
+  }
+  revalidatePath("/", "layout");
+  redirect(`/quests/${q.refNo}?resolved=${outcome}`);
 }

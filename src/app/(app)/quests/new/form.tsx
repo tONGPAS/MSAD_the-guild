@@ -2,15 +2,18 @@
 
 import { useActionState } from "react";
 import { createQuest, type QuestFormState } from "@/modules/quests/actions";
+import { Gem, RARITY, type Difficulty } from "@/components/badges";
 import { SubmitButton } from "@/components/submit-button";
 
-const LEVELS = [
-  { v: "EASY", label: "Easy" },
-  { v: "MEDIUM", label: "Medium" },
-  { v: "HARD", label: "Hard" },
-];
+//Full class strings per rarity so Tailwind keeps them
+const PICKED: Record<Difficulty, string> = {
+  EASY: "peer-checked:border-common peer-checked:bg-common-soft",
+  MEDIUM: "peer-checked:border-rare peer-checked:bg-rare-soft",
+  HARD: "peer-checked:border-epic peer-checked:bg-epic-soft",
+};
+const LEVELS = (["EASY", "MEDIUM", "HARD"] as const).map((v) => ({ v, ...RARITY[v] }));
 
-export function NewQuestForm({ attachments }: { attachments: boolean }) {
+export function NewQuestForm({ attachments, xpLeftToday }: { attachments: boolean; xpLeftToday: number }) {
   const [state, action] = useActionState<QuestFormState, FormData>(createQuest, {});
   const f = state.fields;
   return (
@@ -35,12 +38,15 @@ export function NewQuestForm({ attachments }: { attachments: boolean }) {
       <div className="space-y-6">
         <fieldset className="panel p-5">
           <legend className="field-label px-1">Difficulty</legend>
-          <div className="mt-1 grid grid-cols-3 gap-2">
+          <p className="mb-2 text-sm text-muted">How hard was this to write? It tells your reviewer what to expect.</p>
+          <div className="grid grid-cols-3 gap-2">
             {LEVELS.map((l) => (
               <label key={l.v} className="cursor-pointer">
                 <input type="radio" name="difficulty" value={l.v} defaultChecked={(f?.difficulty ?? "MEDIUM") === l.v} className="peer sr-only" />
-                <span className="flex min-h-11 items-center justify-center rounded-md border border-line font-bold peer-checked:border-brand peer-checked:bg-brand peer-checked:text-brand-ink peer-focus-visible:outline-3 peer-focus-visible:outline-gold">
-                  {l.label}
+                <span className={`flex flex-col items-center gap-1 rounded-xl border-2 border-b-4 border-line border-b-edge bg-surface px-1 py-3 transition-transform peer-checked:-translate-y-0.5 peer-focus-visible:outline-3 peer-focus-visible:outline-gold motion-reduce:transition-none ${PICKED[l.v]}`}>
+                  <Gem level={l.v} size={26} />
+                  <span className={`text-sm font-extrabold ${l.text}`}>{l.rarity}</span>
+                  <span className="text-xs text-muted">{l.diff}</span>
                 </span>
               </label>
             ))}
@@ -62,7 +68,12 @@ export function NewQuestForm({ attachments }: { attachments: boolean }) {
           </label>
         </div>
 
-        <SubmitButton pending="Submitting..." className="btn-primary w-full">Submit quest</SubmitButton>
+        <SubmitButton pending="Submitting..." className="btn-gold w-full text-lg">Submit quest</SubmitButton>
+        <p className="-mt-3 text-center text-sm text-muted">
+          {xpLeftToday > 0
+            ? <>Earns <span className="font-pixel text-base text-gold">+10 XP</span> ({xpLeftToday} of 3 quest rewards left today)</>
+            : "You've used today's 3 quest rewards. You can still post; it just won't earn XP."}
+        </p>
       </div>
     </form>
   );

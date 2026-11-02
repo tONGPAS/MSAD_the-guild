@@ -5,7 +5,8 @@ import { requireUser } from "@/modules/auth/session";
 import { BADGE_ORDER, BADGES, type BadgeCode } from "@/modules/progression/badges";
 import { guildProfile, recentXp } from "@/modules/progression/profile";
 import { DifficultyTag } from "@/components/badges";
-import { RankSeal } from "@/components/rank-seal";
+import { Crest } from "@/components/crest";
+import { RankEmblem, XpBar } from "@/components/rank-seal";
 import { formatRef, RANKS, rankProgress } from "@/lib/rules";
 import { ago } from "@/lib/time";
 
@@ -35,14 +36,17 @@ export default async function ProfilePage({ params }: PageProps<"/guild/[id]">) 
   return (
     <div className="space-y-8">
       <Link href="/guild" className="text-sm text-muted underline">Guild Hall</Link>
-      <section className="panel flex flex-wrap items-center gap-6 p-6">
-        <span className="text-ink"><RankSeal xp={p.user.xpTotal} size={88} /></span>
+      <section className="panel flex flex-wrap items-center gap-6 p-6" style={{ backgroundImage: "radial-gradient(circle at 0% 0%, var(--gold-soft), transparent 60%)" }}>
+        <Crest id={p.user.id} name={p.user.name} size={80} ring />
         <div className="min-w-56 flex-1">
-          <h1 className="text-3xl font-bold">{p.user.name}{self && <span className="ml-2 text-lg font-normal text-muted">(you)</span>}</h1>
-          <p className="mb-3 text-muted">{prog.next ? `${prog.toNext} XP to reach ${prog.next}` : "Reached the highest rank."}</p>
-          <div className="h-3 w-full overflow-hidden rounded-full bg-gold-soft" role="progressbar" aria-valuenow={prog.pct} aria-valuemin={0} aria-valuemax={100} aria-label="Progress to next rank">
-            <div className="h-full bg-gold" style={{ width: `${prog.pct}%` }} />
-          </div>
+          <h1 className="text-3xl font-extrabold">{p.user.name}{self && <span className="ml-2 text-lg font-normal text-muted">(you)</span>}</h1>
+          <p className="mt-1 flex items-center gap-2">
+            <RankEmblem xp={p.user.xpTotal} size={28} />
+            <span className="font-bold">{prog.label}</span>
+            <span className="font-pixel ml-auto text-gold">{p.user.xpTotal} XP</span>
+          </p>
+          <XpBar xp={p.user.xpTotal} tall className="mt-2" />
+          <p className="mt-1 text-sm text-muted">{prog.next ? `${prog.toNext} XP to reach ${prog.next}` : "Reached the highest rank."}</p>
         </div>
       </section>
 
@@ -63,9 +67,10 @@ export default async function ProfilePage({ params }: PageProps<"/guild/[id]">) 
           {BADGE_ORDER.map((code) => {
             const at = earned.get(code);
             return (
-              <li key={code} className={`rounded-lg border p-4 ${at ? "border-gold bg-gold-soft" : "border-dashed border-line text-muted"}`}>
-                <p className="font-bold">{BADGES[code].label}</p>
-                <p className="text-sm">{at ? `Earned ${ago(at)}` : BADGES[code].how}</p>
+              <li key={code} className={`flex flex-col items-center gap-2 rounded-xl border-2 p-4 text-center ${at ? "border-gold border-b-4 border-b-gold-deep bg-gold-soft" : "border-dashed border-line text-muted"}`}>
+                <BadgeIcon code={code} earned={!!at} />
+                <p className="font-bold leading-tight">{BADGES[code].label}</p>
+                <p className="text-xs">{at ? `Earned ${ago(at)}` : BADGES[code].how}</p>
               </li>
             );
           })}
@@ -137,9 +142,28 @@ function Stat({ label, value, unit }: { label: string; value: number | string; u
   return (
     <div className="panel p-4">
       <dt className="text-sm text-muted">{label}</dt>
-      <dd className="font-display text-2xl font-bold tabular-nums">
+      <dd className="font-pixel text-2xl">
         {value} {unit && <span className="text-base font-normal text-muted">{unit}</span>}
       </dd>
     </div>
+  );
+}
+
+//Each badge gets its own glyph; locked ones are greyed outlines so the goal is still visible
+function BadgeIcon({ code, earned }: { code: BadgeCode; earned: boolean }) {
+  const fill = earned ? "var(--gold-bright)" : "none";
+  const stroke = earned ? "var(--gold-deep)" : "var(--muted)";
+  const glyph = {
+    FIRST_QUEST: <path d="M12 26 L20 8 L28 26 M15 20 H25" />,
+    FIRST_REVIEW: <path d="M10 20 L17 27 L30 12" />,
+    STREAK_3: <path d="M20 8 C22 14 28 16 28 23 A8 8 0 0 1 12 23 C12 18 16 17 16 12 C18 15 19 17 20 18 C21 14 21 11 20 8 Z" />,
+    HELPFUL_10: <path d="M20 29 L11 20 A5 5 0 0 1 20 13 A5 5 0 0 1 29 20 Z" />,
+    RANK_MASTER: <path d="M10 26 L12 14 L17 19 L20 11 L23 19 L28 14 L30 26 Z" />,
+  }[code];
+  return (
+    <svg width="44" height="44" viewBox="0 0 40 40" aria-hidden>
+      <circle cx="20" cy="20" r="18" fill={earned ? "var(--brand)" : "none"} stroke={stroke} strokeWidth="2" strokeDasharray={earned ? undefined : "4 3"} />
+      <g fill={code === "FIRST_QUEST" || code === "FIRST_REVIEW" ? "none" : fill} stroke={earned ? "var(--gold-bright)" : stroke} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">{glyph}</g>
+    </svg>
   );
 }

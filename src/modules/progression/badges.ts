@@ -1,5 +1,5 @@
 import "server-only";
-import { and, count, eq } from "drizzle-orm";
+import { and, count, eq, gte } from "drizzle-orm";
 import type { DB } from "@/db";
 import { quests, reviews, userBadges, users } from "@/db/schema";
 import { HELPFUL_BADGE_COUNT, STREAK_BADGE_WEEKS } from "@/lib/rules";
@@ -44,4 +44,14 @@ export async function checkBadges(tx: DB, userId: string) {
   for (const a of added) {
     await notify(tx, userId, `Badge earned: ${BADGES[a.code as BadgeCode].label}`);
   }
+}
+
+//Badges earned by the action that just happened, for its reward card. The window is short
+//so a badge from an earlier action never shows up again on the next one.
+export async function justEarnedBadges(tx: DB, userId: string) {
+  const rows = await tx
+    .select({ code: userBadges.badgeCode })
+    .from(userBadges)
+    .where(and(eq(userBadges.userId, userId), gte(userBadges.awardedAt, new Date(Date.now() - 20_000))));
+  return rows.map((r) => BADGES[r.code as BadgeCode]?.label).filter(Boolean) as string[];
 }

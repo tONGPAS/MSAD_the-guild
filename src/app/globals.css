@@ -1,56 +1,98 @@
 @import "tailwindcss";
 
+/*Guild identity: CIT-U maroon banner + gold trim; violet-tinted stone ground (not cream);
+  jewel rarity tones for quest difficulty; one bold device, pixel numerals, used only for game numbers*/
 :root {
-  --canvas: #f5f3f4;
+  --canvas: #eeecf3;
   --surface: #ffffff;
-  --ink: #221c1e;
-  --muted: #615a5d;
-  --line: #e2dcdf;
+  --sunken: #f6f5fa;
+  --ink: #1d1a26;
+  --muted: #5d586b;
+  --line: #d9d5e4;
+  --edge: #c7c1d8;
   --brand: #7a1f2b;
+  --brand-deep: #55121c;
   --brand-ink: #ffffff;
-  --brand-soft: #f6e9eb;
-  --gold: #b8901c;
-  --gold-soft: #f7efd6;
-  --ok: #2f6b3f;
-  --ok-soft: #e4f1e7;
-  --warn: #8a5a00;
-  --warn-soft: #fbefd9;
-  --danger: #a3242f;
-  --danger-soft: #fbe6e8;
+  --brand-soft: #f5e8eb;
+  --banner: #7a1f2b;
+  --banner-deep: #55121c;
+  --gold: #a87a0a;
+  --gold-bright: #e0aa25;
+  --gold-deep: #7d5a05;
+  --gold-soft: #f8efd4;
+  --common: #17806a;
+  --common-soft: #dff3ec;
+  --rare: #2860c8;
+  --rare-soft: #e2ebfb;
+  --epic: #7a3dd0;
+  --epic-soft: #efe6fc;
+  --ok: #24733f;
+  --ok-soft: #e2f2e6;
+  --warn: #8a5600;
+  --warn-soft: #fcf0d8;
+  --danger: #b0222f;
+  --danger-soft: #fce6e8;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --canvas: #161214;
-    --surface: #201a1d;
-    --ink: #f1ecee;
-    --muted: #b3a9ad;
-    --line: #3a3135;
-    --brand: #c8505f;
+    --canvas: #13111a;
+    --surface: #1e1a28;
+    --sunken: #181521;
+    --ink: #efebf7;
+    --muted: #aaa3ba;
+    --line: #342d44;
+    --edge: #0b0910;
+    --brand: #c94c61;
+    --brand-deep: #7e2433;
     --brand-ink: #ffffff;
-    --brand-soft: #3a1d23;
-    --gold: #e0b94a;
-    --gold-soft: #3a3016;
-    --ok: #7cc48e;
-    --ok-soft: #1d3324;
-    --warn: #e7b45a;
-    --warn-soft: #3a2d14;
-    --danger: #f08a93;
-    --danger-soft: #3d1c20;
+    --brand-soft: #3a1c26;
+    --banner: #5e1621;
+    --banner-deep: #3a0b13;
+    --gold: #f0c24b;
+    --gold-bright: #ffd768;
+    --gold-deep: #9c7516;
+    --gold-soft: #3a3018;
+    --common: #45c9a0;
+    --common-soft: #15332b;
+    --rare: #6f9ff2;
+    --rare-soft: #1a2640;
+    --epic: #b28af5;
+    --epic-soft: #2b1f45;
+    --ok: #74c98f;
+    --ok-soft: #173322;
+    --warn: #ecb45b;
+    --warn-soft: #3a2c13;
+    --danger: #f2848f;
+    --danger-soft: #3e1a20;
+    color-scheme: dark;
   }
 }
 
 @theme inline {
   --color-canvas: var(--canvas);
   --color-surface: var(--surface);
+  --color-sunken: var(--sunken);
   --color-ink: var(--ink);
   --color-muted: var(--muted);
   --color-line: var(--line);
+  --color-edge: var(--edge);
   --color-brand: var(--brand);
+  --color-brand-deep: var(--brand-deep);
   --color-brand-ink: var(--brand-ink);
   --color-brand-soft: var(--brand-soft);
+  --color-banner: var(--banner);
+  --color-banner-deep: var(--banner-deep);
   --color-gold: var(--gold);
+  --color-gold-bright: var(--gold-bright);
+  --color-gold-deep: var(--gold-deep);
   --color-gold-soft: var(--gold-soft);
+  --color-common: var(--common);
+  --color-common-soft: var(--common-soft);
+  --color-rare: var(--rare);
+  --color-rare-soft: var(--rare-soft);
+  --color-epic: var(--epic);
+  --color-epic-soft: var(--epic-soft);
   --color-ok: var(--ok);
   --color-ok-soft: var(--ok-soft);
   --color-warn: var(--warn);
@@ -60,10 +102,13 @@
   --font-sans: "Atkinson Hyperlegible", system-ui, sans-serif;
   --font-display: "Bricolage Grotesque Variable", "Atkinson Hyperlegible", system-ui, sans-serif;
   --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
+  --font-pixel: "VT323", "JetBrains Mono Variable", monospace;
 }
 
 body {
-  background: var(--canvas);
+  background-color: var(--canvas);
+  /*Faint diagonal weave: reads as cloth or stone up close, invisible at a glance*/
+  background-image: repeating-linear-gradient(45deg, color-mix(in srgb, var(--line) 22%, transparent) 0 1px, transparent 1px 14px);
   color: var(--ink);
   font-family: var(--font-sans);
   font-size: 1rem;
@@ -87,28 +132,73 @@ h1, h2, h3 {
   * { transition: none !important; animation: none !important; }
 }
 
-/*Tailwind v4: @utility (not @layer) so these can be composed with @apply*/
+/*Tailwind v4: @utility (not @layer) so these can be composed with @apply.
+  Game feel comes from a thick bottom edge that a button "presses" into when clicked.*/
 @utility btn {
-  @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60;
+  @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] border-b-4 px-4 font-bold transition-[transform,border-width,filter] duration-75 active:translate-y-0.5 active:border-b-2 disabled:cursor-not-allowed disabled:opacity-60;
 }
 @utility btn-primary {
-  @apply btn bg-brand text-brand-ink hover:brightness-110;
+  @apply btn border-brand-deep bg-brand text-brand-ink hover:brightness-110;
+}
+@utility btn-gold {
+  @apply btn border-gold-deep bg-gold-bright text-[#2b1d00] hover:brightness-105;
 }
 @utility btn-ghost {
-  @apply btn border border-line bg-surface text-ink hover:border-brand;
+  @apply btn border-2 border-b-4 border-line border-b-edge bg-surface text-ink hover:border-brand active:border-b-2;
 }
 @utility field-label {
   @apply mb-1 block text-sm font-bold;
 }
 @utility field {
-  @apply block min-h-11 w-full rounded-md border border-line bg-surface px-3 py-2 text-ink placeholder:text-muted/70 focus:border-brand;
+  @apply block min-h-11 w-full rounded-lg border-2 border-line bg-sunken px-3 py-2 text-ink placeholder:text-muted/70 focus:border-brand focus:bg-surface;
 }
 @utility panel {
-  @apply rounded-lg border border-line bg-surface;
+  @apply rounded-xl border-2 border-b-4 border-line border-b-edge bg-surface;
+}
+@utility font-pixel {
+  font-family: var(--font-pixel);
+  font-variant-numeric: tabular-nums;
+  /*VT323 runs small; scale it to the x-height of the text around it*/
+  font-size-adjust: 0.62;
+  letter-spacing: 0.03em;
 }
 
 /*Ligatures would draw C's -> as an arrow, which misleads students reading pointer code*/
 code, pre, .font-mono {
   font-variant-ligatures: none;
   font-feature-settings: "liga" 0, "calt" 0;
+}
+
+/*Reward moments. Everything here is motion-only: the end state is fully readable without it.*/
+@keyframes pop-in {
+  0% { transform: translateY(8px) scale(0.96); opacity: 0; }
+  60% { transform: translateY(-2px) scale(1.01); opacity: 1; }
+  100% { transform: none; opacity: 1; }
+}
+@keyframes float-up {
+  0% { transform: translateY(6px); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: translateY(-26px); opacity: 0; }
+}
+@keyframes fill-from {
+  from { width: var(--from); }
+}
+@keyframes shine {
+  from { transform: translateX(-120%) skewX(-20deg); }
+  to { transform: translateX(320%) skewX(-20deg); }
+}
+@keyframes sparkle {
+  0%, 100% { transform: scale(0) rotate(0deg); opacity: 0; }
+  50% { transform: scale(1) rotate(90deg); opacity: 1; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .anim-pop { animation: pop-in 420ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+  .anim-float { animation: float-up 1.6s ease-out 300ms both; }
+  .anim-fill { animation: fill-from 1.1s cubic-bezier(0.3, 0.7, 0.2, 1) 350ms both; }
+  .anim-shine::after {
+    content: ""; position: absolute; inset: 0; width: 30%;
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.55), transparent);
+    animation: shine 1.4s ease-in-out 600ms 2 both;
+  }
+  .anim-sparkle { animation: sparkle 1.2s ease-in-out both; }
 }

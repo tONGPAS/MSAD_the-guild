@@ -1,25 +1,47 @@
-import { rankProgress } from "@/lib/rules";
+import { RANKS, rankProgress } from "@/lib/rules";
 
-//The one loud element: a gold ring that fills toward the next rank
-export function RankSeal({ xp, size = 44 }: { xp: number; size?: number }) {
+const tierOf = (xp: number) => Math.max(0, RANKS.findLastIndex((r) => xp >= r.min));
+
+//Rank emblem: a gold diamond with one pip per tier, so rank reads as a shape, not just a word
+export function RankEmblem({ xp, size = 40 }: { xp: number; size?: number }) {
+  const tier = tierOf(xp);
   const p = rankProgress(xp);
-  const r = 18;
-  const c = 2 * Math.PI * r;
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" role="img" aria-label={`${p.label} rank`} className="shrink-0">
+      <path d="M20 2 L38 20 L20 38 L2 20 Z" fill="var(--gold-bright)" stroke="var(--gold-deep)" strokeWidth="2.5" />
+      <path d="M20 8 L32 20 L20 32 L8 20 Z" fill="var(--gold-deep)" opacity="0.28" />
+      {Array.from({ length: tier + 1 }, (_, i) => {
+        const x = 20 + (i - tier / 2) * 5.5;
+        return <rect key={i} x={x - 2} y={18} width={4} height={4} fill="#2b1d00" transform={`rotate(45 ${x} 20)`} />;
+      })}
+    </svg>
+  );
+}
+
+//Segmented like a game HUD bar; the segments are decoration, the fill is the real percentage
+export function XpBar({ xp, className = "", tall }: { xp: number; className?: string; tall?: boolean }) {
+  const p = rankProgress(xp);
+  return (
+    <div
+      className={`relative overflow-hidden rounded-full border-2 border-gold-deep bg-black/25 ${tall ? "h-4" : "h-2.5"} ${className}`}
+      role="progressbar" aria-valuenow={p.pct} aria-valuemin={0} aria-valuemax={100}
+      aria-label={p.next ? `${p.pct}% of the way to ${p.next}` : "Highest rank reached"}
+    >
+      <div className="xp-fill h-full bg-gold-bright" style={{ width: `${p.pct}%` }} />
+      <div aria-hidden className="absolute inset-0" style={{ backgroundImage: "repeating-linear-gradient(90deg, transparent 0 calc(10% - 2px), rgb(0 0 0 / 0.28) calc(10% - 2px) 10%)" }} />
+    </div>
+  );
+}
+
+//Compact HUD block used in the header and directory: emblem, rank name, XP in pixel numerals
+export function RankSeal({ xp, size = 40 }: { xp: number; size?: number }) {
+  const p = rankProgress(xp);
   return (
     <span className="inline-flex items-center gap-2" title={p.next ? `${p.toNext} XP to ${p.next}` : "Highest rank"}>
-      <svg width={size} height={size} viewBox="0 0 44 44" role="img" aria-label={`${p.label}, ${xp} XP`}>
-        <circle cx="22" cy="22" r={r} fill="none" stroke="currentColor" strokeOpacity="0.25" strokeWidth="4" />
-        <circle
-          cx="22" cy="22" r={r} fill="none" stroke="var(--gold)" strokeWidth="4" strokeLinecap="round"
-          strokeDasharray={`${(p.pct / 100) * c} ${c}`} transform="rotate(-90 22 22)"
-        />
-        <text x="22" y="26.5" textAnchor="middle" fontSize="13" fontWeight="700" fill="currentColor" fontFamily="var(--font-display)">
-          {p.label[0]}
-        </text>
-      </svg>
+      <RankEmblem xp={xp} size={size} />
       <span className="leading-tight">
         <span className="block text-sm font-bold">{p.label}</span>
-        <span className="block text-xs opacity-80">{xp} XP</span>
+        <span className="font-pixel block text-xs opacity-90">{xp} XP</span>
       </span>
     </span>
   );

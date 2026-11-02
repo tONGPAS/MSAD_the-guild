@@ -87,6 +87,8 @@ export async function createQuest(_: QuestFormState, form: FormData): Promise<Qu
     return { error: "Your quest could not be saved. Nothing was submitted, please try again.", fields: raw };
   }
 
+  //The header shows XP, and layouts are reused between pages, so redraw it
+  revalidatePath("/", "layout");
   redirect(`/quests/${result.refNo}?submitted=${result.paid ? "1" : "nox"}`);
 }
 

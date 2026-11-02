@@ -89,7 +89,7 @@ with sync_playwright() as p:
     amy.fill("#snippet", "void enqueue(Queue *q, int v) {\n  Node *n = malloc(sizeof(Node));\n  n->v = v; n->next = NULL;\n  q->tail->next = n;\n  q->tail = n;\n}")
     amy.evaluate("document.querySelector('input[name=confirm]').required=false")
     amy.click("text=Submit quest")
-    amy.wait_for_selector("[role=alert]")
+    amy.wait_for_selector("text=Confirm that this code is not graded")
     check("quest without not-graded confirmation is rejected (FR-10)", "/quests/new" in amy.url and "Confirm that" in amy.content())
 
     amy.check("input[name=confirm]")
@@ -97,7 +97,7 @@ with sync_playwright() as p:
     amy.click("text=Submit quest")
     amy.wait_for_url("**/quests/*?submitted=1")
     body = amy.inner_text("main")
-    check("quest submitted and assigned (AC-04)", "has been assigned to review it" in body)
+    check("quest submitted and assigned (AC-04)", "A classmate has been picked to review it" in body)
     check("submitter is not the reviewer (FR-13)", "Reviewer: Amy" not in body and "Reviewer: you" not in body)
     amy.screenshot(path=f"{SHOTS}/04-quest-submitted.png", full_page=True)
     q1_reviewer = sql("select u.email from quests q join users u on u.id=q.reviewer_id where q.ref_no=1")

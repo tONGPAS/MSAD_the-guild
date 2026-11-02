@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser } from "@/modules/auth/session";
 import { guildMembers } from "@/modules/progression/profile";
-import { RankSeal } from "@/components/rank-seal";
+import { Crest } from "@/components/crest";
+import { RankEmblem, XpBar } from "@/components/rank-seal";
+import { rankProgress } from "@/lib/rules";
 
 export const metadata: Metadata = { title: "Guild Hall" };
 
@@ -19,12 +21,18 @@ export default async function GuildHallPage() {
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2">
           {members.map((m) => (
-            <li key={m.id}>
-              <Link href={`/guild/${m.id}`} className="panel flex items-center gap-4 p-4 hover:border-brand">
-                <RankSeal xp={m.xpTotal} />
+            <li key={m.id} className="min-w-0">
+              <Link href={`/guild/${m.id}`} className={`panel flex items-center gap-4 p-4 transition-transform hover:-translate-y-0.5 motion-reduce:hover:translate-y-0 ${m.id === me.id ? "border-gold" : ""}`}>
+                <Crest id={m.id} name={m.name} size={44} ring={m.id === me.id} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-bold">{m.name}{m.id === me.id && " (you)"}</span>
-                  <span className="block text-sm text-muted">
+                  <span className="mt-0.5 flex items-center gap-1.5 text-sm">
+                    <RankEmblem xp={m.xpTotal} size={16} />
+                    <span className="font-bold">{rankProgress(m.xpTotal).label}</span>
+                    <span className="font-pixel ml-auto text-gold">{m.xpTotal} XP</span>
+                  </span>
+                  <XpBar xp={m.xpTotal} className="mt-1" />
+                  <span className="mt-1 block text-xs text-muted">
                     {m.streak > 0 ? `${m.streak}-week streak` : "No streak yet"}, {m.badges} of 5 badges
                   </span>
                 </span>
