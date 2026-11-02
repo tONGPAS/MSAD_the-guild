@@ -5,9 +5,9 @@ import { z } from "zod";
 import { db } from "@/db";
 import { quests, statusLogs } from "@/db/schema";
 import { audit } from "@/lib/audit";
-import { LIMITS } from "@/lib/rules";
+import { LIMITS, SUBMIT_XP_DAILY_CAP } from "@/lib/rules";
 import { requireUser } from "@/modules/auth/session";
-import { awardXp } from "@/modules/progression/service";
+import { awardXp, submissionsPaidToday } from "@/modules/progression/service";
 import { fetchPrMeta, isPullRequestUrl } from "./github";
 import { assignPending } from "./service";
 import { removeAttachment, uploadAttachment } from "./storage";
@@ -53,10 +53,10 @@ export async function createQuest(_: QuestFormState, form: FormData): Promise<Qu
     attachmentRef = up.ref;
   }
 
-  let refNo: number;
+  let result: { refNo: number; paid: boolean };
   try {
     //NFR-08: quest, history, assignment, notification, and XP commit together or not at all
-    refNo = await db.transaction(async (tx) => {
+    result = await db.transaction(async (tx) => {
       const [q] = await tx
         .insert(quests)
         .values({
@@ -73,8 +73,11 @@ export async function createQuest(_: QuestFormState, form: FormData): Promise<Qu
       await tx.insert(statusLogs).values({ questId: q.id, fromStatus: null, toStatus: "PENDING", changedBy: user.id });
       await audit(tx, user.id, "STATUS_CHANGE", `quest:${q.id} created`);
       await assignPending(tx, q);
-      await awardXp(tx, user.id, "SUBMIT_QUEST", q.id);
-      return q.refNo;
+      //assignPending holds the assignment lock until commit, so two quests sent at
+      //once are counted one after the other and cannot both slip under the cap
+      const paid = (await submissionsPaidToday(tx, user.id)) < SUBMIT_XP_DAILY_CAP;
+      if (paid) await awardXp(tx, user.id, "SUBMIT_QUEST", q.id);
+      return { refNo: q.refNo, paid };
     });
   } catch (e) {
     if (attachmentRef) await removeAttachment(attachmentRef);
@@ -82,5 +85,5 @@ export async function createQuest(_: QuestFormState, form: FormData): Promise<Qu
     return { error: "Your quest could not be saved. Nothing was submitted, please try again.", fields: raw };
   }
 
-  redirect(`/quests/${refNo}?submitted=1`);
+  redirect(`/quests/${result.refNo}?submitted=${result.paid ? "1" : "nox"}`);
 }

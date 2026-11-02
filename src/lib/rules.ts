@@ -19,6 +19,16 @@ export const XP = {
 } as const;
 export type XpAction = keyof typeof XP;
 
+//Only the first few quests a day earn submit XP, so junk quests cannot farm points.
+//Submitting more still works; it just pays nothing.
+export const SUBMIT_XP_DAILY_CAP = 3;
+
+//Manila has no daylight saving, so its day starts at a fixed 16:00 UTC
+const MANILA_OFFSET_MS = 8 * 3_600_000;
+export function manilaDayStart(now = Date.now()) {
+  return new Date(Math.floor((now + MANILA_OFFSET_MS) / 86_400_000) * 86_400_000 - MANILA_OFFSET_MS);
+}
+
 export const FAST_RESOLVE_HOURS = 48;
 
 export const RANKS = [

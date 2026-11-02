@@ -1,8 +1,8 @@
 import "server-only";
-import { eq, sql } from "drizzle-orm";
+import { and, count, eq, gte, sql } from "drizzle-orm";
 import type { DB } from "@/db";
 import { users, xpEvents } from "@/db/schema";
-import { rankFor, XP, type XpAction } from "@/lib/rules";
+import { manilaDayStart, rankFor, XP, type XpAction } from "@/lib/rules";
 
 //FR-27, FR-28: one XP event per (user, action, thing) so retries never double-pay
 export async function awardXp(tx: DB, userId: string, action: XpAction, refId: string) {
@@ -20,4 +20,13 @@ export async function awardXp(tx: DB, userId: string, action: XpAction, refId: s
     .returning({ xp: users.xpTotal, rank: users.rank });
   const newRank = rankFor(u.xp);
   if (newRank !== u.rank) await tx.update(users).set({ rank: newRank }).where(eq(users.id, userId));
+}
+
+//How many of today's (Manila time) quest submissions already paid XP
+export async function submissionsPaidToday(tx: DB, userId: string) {
+  const [r] = await tx
+    .select({ n: count() })
+    .from(xpEvents)
+    .where(and(eq(xpEvents.userId, userId), eq(xpEvents.action, "SUBMIT_QUEST"), gte(xpEvents.createdAt, manilaDayStart())));
+  return r?.n ?? 0;
 }

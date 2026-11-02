@@ -8,7 +8,7 @@ import { rateReview, replyToIssue, resolveQuest } from "@/modules/reviews/action
 import { DifficultyTag, StatusTag } from "@/components/badges";
 import { CodeView } from "@/components/code-view";
 import { SubmitButton } from "@/components/submit-button";
-import { FAST_RESOLVE_HOURS, formatRef } from "@/lib/rules";
+import { FAST_RESOLVE_HOURS, formatRef, SUBMIT_XP_DAILY_CAP } from "@/lib/rules";
 import { ago, stamp } from "@/lib/time";
 
 export const metadata: Metadata = { title: "Quest" };
@@ -35,7 +35,7 @@ export default async function QuestPage({ params, searchParams }: PageProps<"/qu
     <div className="space-y-8">
       {sp.submitted && (
         <p role="status" className="rounded-md bg-ok-soft p-4 text-ok">
-          Quest submitted. {q.reviewer ? <>{q.reviewer.name} has been assigned to review it.</> : <>No reviewer is free yet, so it will be assigned as soon as one joins.</>} You earned 10 XP.
+          Quest submitted. {q.reviewer ? <>{q.reviewer.name} has been assigned to review it.</> : <>No reviewer is free yet, so it will be assigned as soon as one joins.</>} {sp.submitted === "nox" ? <>No XP this time: only your first {SUBMIT_XP_DAILY_CAP} quests each day earn XP.</> : <>You earned 10 XP.</>}
         </p>
       )}
       {sp.reviewed && <p role="status" className="rounded-md bg-ok-soft p-4 text-ok">Review sent. You earned 25 XP.</p>}
