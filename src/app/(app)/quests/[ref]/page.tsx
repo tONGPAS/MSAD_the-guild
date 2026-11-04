@@ -140,7 +140,7 @@ export default async function QuestPage({ params, searchParams }: PageProps<"/qu
       <section aria-labelledby="code">
         <h2 id="code" className="mb-3 text-xl font-bold">Code</h2>
         <div className="mb-4"><QuestBrief context={q.context} notes={q.notes} by={isSubmitter ? "you" : q.submitter.name} /></div>
-        <CodeView link={q.link} prTitle={q.prTitle} prSize={q.prSize} snippet={q.snippet} image={image} />
+        <CodeView link={q.link} prTitle={q.prTitle} prSize={q.prSize} snippet={q.snippet} image={image} language={q.language} />
       </section>
 
       {q.reviews.map((r) => (

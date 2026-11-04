@@ -98,3 +98,7 @@ export const LIMITS = {
 export function formatRef(refNo: number) {
   return `QS-${String(refNo).padStart(6, "0")}`;
 }
+
+//Languages accepted during the pilot (CR-01 scope). Key is what is stored; label is what people see.
+export const LANGUAGES = { c: { label: "C", ext: "c" }, cpp: { label: "C++", ext: "cpp" } } as const;
+export type Language = keyof typeof LANGUAGES;

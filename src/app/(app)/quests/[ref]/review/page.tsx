@@ -38,7 +38,7 @@ export default async function ReviewPage({ params }: PageProps<"/quests/[ref]/re
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem]">
         <div className="min-w-0 space-y-4">
           <QuestBrief context={q.context} notes={q.notes} by={q.submitter.name} />
-          <CodeView link={q.link} prTitle={q.prTitle} prSize={q.prSize} snippet={q.snippet} image={image} />
+          <CodeView link={q.link} prTitle={q.prTitle} prSize={q.prSize} snippet={q.snippet} image={image} language={q.language} />
         </div>
         <ReviewForm submit={submitReview.bind(null, q.id)} xp={XP.COMPLETE_REVIEW} />
       </div>

@@ -22,6 +22,8 @@ import {
 export const roleEnum = pgEnum("role", ["STUDENT", "FACULTY"]);
 export const userStatusEnum = pgEnum("user_status", ["ACTIVE", "INACTIVE"]);
 export const difficultyEnum = pgEnum("difficulty", ["EASY", "MEDIUM", "HARD"]);
+//Pilot scope: the batch writes C and C++, and everyone can read both, so no reviewer matching is needed
+export const languageEnum = pgEnum("code_language", ["c", "cpp"]);
 export const questStatusEnum = pgEnum("quest_status", ["PENDING", "IN_REVIEW", "COMPLETED", "RESOLVED"]);
 export const commentKindEnum = pgEnum("comment_kind", ["ISSUE", "PRAISE", "REPLY"]);
 export const mentorStatusEnum = pgEnum("mentor_status", ["PENDING", "IN_PROGRESS", "RESOLVED"]);
@@ -97,6 +99,7 @@ export const quests = pgTable(
     context: varchar("context", { length: 500 }),
     notes: varchar("notes", { length: 1000 }),
     difficulty: difficultyEnum("difficulty").notNull(),
+    language: languageEnum("language").notNull().default("c"),
     status: questStatusEnum("status").notNull().default("PENDING"),
     prTitle: varchar("pr_title", { length: 300 }),
     prSize: integer("pr_size"),

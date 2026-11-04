@@ -92,7 +92,7 @@ export default async function TrainingLevel({ params, searchParams }: PageProps<
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem]">
         <div className="min-w-0 space-y-4">
           <QuestBrief context={level.context} notes={level.notes} by="Bit" />
-          <CodeView link={null} prTitle={null} prSize={null} snippet={level.snippet} image={null} />
+          <CodeView link={null} prTitle={null} prSize={null} snippet={level.snippet} image={null} language="c" />
         </div>
         <ReviewForm submit={submitTraining.bind(null, level.n)} />
       </div>

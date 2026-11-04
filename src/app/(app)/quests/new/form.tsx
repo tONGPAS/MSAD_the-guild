@@ -12,6 +12,7 @@ const PICKED: Record<Difficulty, string> = {
   HARD: "peer-checked:border-epic peer-checked:bg-epic-soft",
 };
 const LEVELS = (["EASY", "MEDIUM", "HARD"] as const).map((v) => ({ v, ...RARITY[v] }));
+const LANGS = [["c", "C"], ["cpp", "C++"]] as const;
 
 export function NewQuestForm({ attachments, xpLeftToday }: { attachments: boolean; xpLeftToday: number }) {
   const [state, action] = useActionState<QuestFormState, FormData>(createQuest, {});
@@ -25,6 +26,18 @@ export function NewQuestForm({ attachments, xpLeftToday }: { attachments: boolea
           <label htmlFor="title" className="field-label">Title</label>
           <input id="title" name="title" required maxLength={120} defaultValue={f?.title} placeholder="e.g. Stack push and pop using a linked list" className="field" />
         </div>
+        <fieldset>
+          <legend className="field-label">Language</legend>
+          <div className="flex flex-wrap items-center gap-2">
+            {LANGS.map(([v, label]) => (
+              <label key={v} className="cursor-pointer">
+                <input type="radio" name="language" value={v} defaultChecked={(f?.language ?? "c") === v} className="peer sr-only" />
+                <span className="block rounded-lg border-2 border-b-4 border-line border-b-edge bg-surface px-4 py-1.5 font-mono font-bold peer-checked:border-brand peer-checked:bg-brand-soft peer-checked:text-brand peer-focus-visible:outline-3 peer-focus-visible:outline-gold">{label}</span>
+              </label>
+            ))}
+            <span className="text-sm text-muted">The Guild reviews C and C++ during the pilot.</span>
+          </div>
+        </fieldset>
         <div>
           <label htmlFor="link" className="field-label">GitHub pull request link</label>
           <input id="link" name="link" type="url" defaultValue={f?.link} placeholder="https://github.com/owner/repo/pull/12" className="field" />

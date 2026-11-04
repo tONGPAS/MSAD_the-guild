@@ -22,6 +22,7 @@ const questInput = z
     link: z.string().trim().max(LIMITS.link).optional(),
     snippet: z.string().max(LIMITS.snippet, "Snippets are limited to 10,000 characters.").optional(),
     difficulty: z.enum(["EASY", "MEDIUM", "HARD"], { message: "Pick a difficulty." }),
+    language: z.enum(["c", "cpp"], { message: "Pick C or C++. The Guild only reviews those two during the pilot." }),
     context: z
       .string()
       .trim()
@@ -45,6 +46,7 @@ export async function createQuest(_: QuestFormState, form: FormData): Promise<Qu
     link: String(form.get("link") ?? ""),
     snippet: String(form.get("snippet") ?? ""),
     difficulty: String(form.get("difficulty") ?? ""),
+    language: String(form.get("language") ?? ""),
     context: String(form.get("context") ?? ""),
     notes: String(form.get("notes") ?? ""),
   };
@@ -74,6 +76,7 @@ export async function createQuest(_: QuestFormState, form: FormData): Promise<Qu
           link: d.link || null,
           snippet: d.snippet?.trim() ? d.snippet : null,
           difficulty: d.difficulty,
+          language: d.language,
           context: d.context,
           notes: d.notes ? d.notes : null,
           prTitle: meta?.title ?? null,
