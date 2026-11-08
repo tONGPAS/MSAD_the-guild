@@ -5,10 +5,11 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { quests, statusLogs } from "@/db/schema";
+import { quests, statusLogs, challengeEntries } from "@/db/schema";
 import { audit } from "@/lib/audit";
 import { isStale, LIMITS, SUBMIT_XP_DAILY_CAP } from "@/lib/rules";
 import { requireUser } from "@/modules/auth/session";
+import { canAnswerCoding } from "@/modules/challenges/service";
 import { awardXp, submissionsPaidToday } from "@/modules/progression/service";
 import { fetchPrMeta, isPullRequestUrl } from "./github";
 import { assignPending, moveReviewer } from "./service";
@@ -38,6 +39,8 @@ const questInput = z
     message: "The link must be a GitHub pull request, like https://github.com/owner/repo/pull/12",
   });
 
+class ChallengeTaken extends Error {}
+
 //FR-08 to FR-14, FR-27, UC-03
 export async function createQuest(_: QuestFormState, form: FormData): Promise<QuestFormState> {
   const user = await requireUser({ role: "STUDENT" });
@@ -47,12 +50,18 @@ export async function createQuest(_: QuestFormState, form: FormData): Promise<Qu
     snippet: String(form.get("snippet") ?? ""),
     difficulty: String(form.get("difficulty") ?? ""),
     language: String(form.get("language") ?? ""),
+    challenge: String(form.get("challenge") ?? ""),
     context: String(form.get("context") ?? ""),
     notes: String(form.get("notes") ?? ""),
   };
   const parsed = questInput.safeParse({ ...raw, confirm: form.get("confirm") ?? undefined });
   if (!parsed.success) return { error: parsed.error.issues[0].message, fields: raw };
   const d = parsed.data;
+  //CR-02: answering a coding challenge. Checked again inside the transaction below.
+  const challengeId = raw.challenge || null;
+  if (challengeId && !(await canAnswerCoding(challengeId, user.id))) {
+    return { error: "That challenge has ended or you already answered it.", fields: { ...raw, challenge: "" } };
+  }
 
   //Network work happens before the transaction so a slow GitHub never holds database locks
   const meta = d.link ? await fetchPrMeta(d.link) : null;
@@ -83,8 +92,13 @@ export async function createQuest(_: QuestFormState, form: FormData): Promise<Qu
           prSize: meta?.size ?? null,
           attachmentRef,
           submitterId: user.id,
+          challengeId,
         })
         .returning({ id: quests.id, refNo: quests.refNo, title: quests.title, submitterId: quests.submitterId });
+      if (challengeId) {
+        const entry = await tx.insert(challengeEntries).values({ challengeId, userId: user.id, questId: q.id }).onConflictDoNothing().returning({ id: challengeEntries.id });
+        if (entry.length === 0) throw new ChallengeTaken();
+      }
       await tx.insert(statusLogs).values({ questId: q.id, fromStatus: null, toStatus: "PENDING", changedBy: user.id });
       await audit(tx, user.id, "STATUS_CHANGE", `quest:${q.id} created`);
       await assignPending(tx, q);
@@ -96,6 +110,7 @@ export async function createQuest(_: QuestFormState, form: FormData): Promise<Qu
     });
   } catch (e) {
     if (attachmentRef) await removeAttachment(attachmentRef);
+    if (e instanceof ChallengeTaken) return { error: "You already answered that challenge.", fields: { ...raw, challenge: "" } };
     console.error("createQuest failed", e);
     return { error: "Your quest could not be saved. Nothing was submitted, please try again.", fields: raw };
   }

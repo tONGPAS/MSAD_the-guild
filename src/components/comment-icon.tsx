@@ -27,3 +27,14 @@ export function ScorePips({ value }: { value: number }) {
     </span>
   );
 }
+
+//CR-02: the thank-you coin a submitter gives one helpful comment
+export function Coin({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden className="shrink-0">
+      <circle cx="10" cy="10" r="8.5" fill="var(--gold-bright)" stroke="var(--gold-deep)" strokeWidth="1.6" />
+      <circle cx="10" cy="10" r="5.6" fill="none" stroke="var(--gold-deep)" strokeWidth="1" opacity=".6" />
+      <path d="M8 7.2 L12 7.2 L10.6 10 L12 12.8 L8 12.8 L9.4 10 Z" fill="var(--gold-deep)" opacity=".8" />
+    </svg>
+  );
+}

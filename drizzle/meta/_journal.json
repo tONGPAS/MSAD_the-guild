@@ -43,6 +43,13 @@
       "when": 1793767771224,
       "tag": "0005_quest_language",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794126502328,
+      "tag": "0006_challenges_coins",
+      "breakpoints": true
     }
   ]
 }

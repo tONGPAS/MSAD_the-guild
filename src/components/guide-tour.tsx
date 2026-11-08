@@ -14,7 +14,7 @@ const STUDENT: Step[] = [
   { target: "card", title: "Your adventurer card", body: "Your week streak, badges, quest rewards left today, and reviews waiting on you, all in one place.", pose: "idle" },
   { target: "todo", title: "Reviews assigned to you", body: "When the Guild picks you as a reviewer, the quest lands here. A classmate is waiting, so try to finish within 72 hours.", pose: "think" },
   { target: "submit", title: "Get feedback on your code", body: "Submit a quest with a PR link or a snippet. Tell your reviewer what the code should do, and a classmate is picked for you in turn.", pose: "idle" },
-  { target: "tabs", title: "Find your way", body: "The Quest Board shows what is open across the Guild. The Guild Hall lists every member and their badges.", pose: "idle" },
+  { target: "tabs", title: "Find your way", body: "The Quest Board shows what is open across the Guild. Challenges has goals and tasks from the Guild Masters, and the Guild Hall lists every member.", pose: "idle" },
   { target: "bell", title: "Notifications", body: "New assignments, reviews of your code, and badges all ring this bell.", pose: "idle" },
   { title: "That's the tour!", body: "Want to try a practice review first? The Training Grounds has three short levels of sample C code with hidden problems. No XP, no pressure.", pose: "cheer" },
 ];
@@ -22,7 +22,7 @@ const STUDENT: Step[] = [
 const FACULTY: Step[] = [
   { title: "Welcome, Guild Master!", body: "I'm Bit, the Guild's slime. Here is a quick look at what you can do.", pose: "wave" },
   { target: "hud", title: "Your rank", body: "Faculty sit above every student rank as Guild Masters. You earn no XP, so student numbers stay clean for the study.", pose: "idle" },
-  { target: "tabs", title: "Your tools", body: "All quests lists every submission. Mentor requests is where students ask for your review. Dashboard shows the numbers, and Members is where you invite students.", pose: "idle" },
+  { target: "tabs", title: "Your tools", body: "All quests lists every submission. Mentor requests is where students ask for your review. Challenges lets you set goals and coding tasks. Dashboard shows the numbers, and Members is where you invite students.", pose: "idle" },
   { target: "filters", title: "Find any quest", body: "Search by title or person, and filter by status or difficulty.", pose: "think" },
   { target: "bell", title: "Notifications", body: "Mentor requests and other news ring this bell.", pose: "idle" },
   { title: "You're all set!", body: "You can replay this tour any time with the ? button in the header.", pose: "cheer" },

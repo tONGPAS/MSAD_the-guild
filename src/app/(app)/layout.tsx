@@ -18,6 +18,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     ? [
         { href: "/faculty/quests", label: "All quests" },
         { href: "/faculty/mentor", label: "Mentor requests", count: mentorWaiting },
+        { href: "/faculty/challenges", label: "Challenges" },
         { href: "/faculty/dashboard", label: "Dashboard" },
         { href: "/guild", label: "Guild Hall" },
         { href: "/faculty/users", label: "Members" },
@@ -25,6 +26,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     : [
         { href: "/quests", label: "My quests" },
         { href: "/board", label: "Quest Board" },
+        { href: "/challenges", label: "Challenges" },
         { href: "/quests/new", label: "New quest" },
         { href: "/guild", label: "Guild Hall" },
       ];

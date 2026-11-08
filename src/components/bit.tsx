@@ -25,7 +25,8 @@ function Sparkle({ x, y, r }: { x: number; y: number; r: number }) {
   return <path d={`M${x} ${y - a} L${x + b} ${y - b} L${x + a} ${y} L${x + b} ${y + b} L${x} ${y + a} L${x - b} ${y + b} L${x - a} ${y} L${x - b} ${y - b} Z`} fill={C.gold} />;
 }
 
-export function Bit({ pose = "idle", size = 120, className = "", still }: { pose?: Pose; size?: number; className?: string; still?: boolean }) {
+//stage: how far the Guild has grown Bit (CR-02). 1 adds a cape, 2 a grander crown, 3 a golden aura.
+export function Bit({ pose = "idle", size = 120, className = "", still, stage = 0 }: { pose?: Pose; size?: number; className?: string; still?: boolean; stage?: 0 | 1 | 2 | 3 }) {
   const g = "bit" + useId().replace(/[^a-zA-Z0-9]/g, "");
   const { sx, sy, dy } = SHAPE[pose];
   const bodyT = `translate(80 ${141 + dy}) scale(${sx} ${sy}) translate(-80 -141)`;
@@ -51,6 +52,11 @@ export function Bit({ pose = "idle", size = 120, className = "", still }: { pose
         <clipPath id={`${g}clip`}><path d={BODY} /></clipPath>
       </defs>
 
+      {stage >= 3 && (
+        <g className={anim("bit-core")}>
+          <ellipse cx="80" cy="96" rx="80" ry="66" fill={`url(#${g}c)`} opacity=".9" />
+        </g>
+      )}
       <ellipse cx="80" cy="143" rx={58 * sx} ry="5" fill="rgb(20 30 70 / 0.18)" className={anim(pose === "alert" || pose === "cheer" ? "bit-shadow" : "")} />
 
       <g className={anim(MOTION[pose])}>
@@ -66,6 +72,13 @@ export function Bit({ pose = "idle", size = 120, className = "", still }: { pose
               </g>
             );
           })}
+          {stage >= 1 && (
+            <g>
+              <path d="M42 76 Q2 104 6 141 Q12 146 22 140 L138 140 Q148 146 154 141 Q158 104 118 76 Q80 92 42 76 Z" fill={C.maroon} stroke="#5e1621" strokeWidth="2.4" strokeLinejoin="round" />
+              <path d="M6 141 Q12 146 22 140 M138 140 Q148 146 154 141" stroke={C.gold} strokeWidth="3" fill="none" strokeLinecap="round" />
+              <path d="M14 112 Q10 126 12 136 M146 112 Q150 126 148 136" stroke="#5e1621" strokeWidth="1.6" fill="none" opacity=".6" />
+            </g>
+          )}
           <path d={BODY} fill={`url(#${g}b)`} stroke={C.edge} strokeWidth="3" strokeLinejoin="round" />
           <g clipPath={`url(#${g}clip)`}>
             <ellipse cx="80" cy="150" rx="70" ry="26" fill={C.lo} opacity=".55" />
@@ -82,7 +95,7 @@ export function Bit({ pose = "idle", size = 120, className = "", still }: { pose
           </g>
           <path d="M40 92 C42 72 56 60 72 58" stroke="#fff" strokeWidth="7" fill="none" strokeLinecap="round" opacity=".75" />
           <circle cx="38" cy="104" r="3.4" fill="#fff" opacity=".7" />
-          <g transform={`rotate(${crownRot} 96 ${crownY})`}>
+          <g transform={`rotate(${crownRot} 96 ${crownY})${stage >= 2 ? ` translate(95 ${crownY}) scale(1.3) translate(-95 ${-crownY})` : ""}`}>
             <g className={anim(pose === "cheer" ? "bit-crown-jig" : "")}>
               <path d={`M80 ${crownY + 2} L78 ${crownY - 16} L87 ${crownY - 8} L95 ${crownY - 21} L103 ${crownY - 8} L112 ${crownY - 16} L110 ${crownY + 2} Q95 ${crownY + 6} 80 ${crownY + 2} Z`} fill={`url(#${g}k)`} stroke={C.goldDeep} strokeWidth="1.8" strokeLinejoin="round" />
               <circle cx="95" cy={crownY - 3} r="3.2" fill={C.maroon} stroke="#5e1621" strokeWidth="1" />
@@ -90,6 +103,8 @@ export function Bit({ pose = "idle", size = 120, className = "", still }: { pose
               <circle cx="78" cy={crownY - 17} r="2" fill="#ffe27a" />
               <circle cx="95" cy={crownY - 22} r="2.2" fill="#ffe27a" />
               <circle cx="112" cy={crownY - 17} r="2" fill="#ffe27a" />
+              {stage >= 2 && <circle cx="86" cy={crownY - 1} r="2.2" fill="#4fb7ff" stroke="#173a86" strokeWidth=".8" />}
+              {stage >= 2 && <circle cx="104" cy={crownY - 1} r="2.2" fill="#4fb7ff" stroke="#173a86" strokeWidth=".8" />}
             </g>
           </g>
           {pose === "wave" && (
@@ -148,6 +163,11 @@ export function Bit({ pose = "idle", size = 120, className = "", still }: { pose
         )}
       </g>
 
+      {stage >= 3 && pose !== "cheer" && (
+        <g className={anim("bit-twinkle")}>
+          <Sparkle x={18} y={60} r={4} /><Sparkle x={146} y={92} r={3.5} />
+        </g>
+      )}
       {pose === "cheer" && (
         <g className={anim("bit-twinkle")}>
           <Sparkle x={22} y={44} r={7} /><Sparkle x={140} y={40} r={6} /><Sparkle x={132} y={72} r={4} />

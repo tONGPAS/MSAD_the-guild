@@ -10,19 +10,27 @@ import { AdventurerCard } from "@/components/adventurer-card";
 import { QuestRows } from "@/components/quest-rows";
 import { BitSays } from "@/components/bit-says";
 import { BIT } from "@/lib/bit-lines";
+import { challengeViews } from "@/modules/challenges/service";
+import { guildGrowth } from "@/modules/progression/titles";
+import { ChallengeCard } from "@/components/challenge-card";
+import { GuildGrowth } from "@/components/guild-growth";
 
 export const metadata: Metadata = { title: "My quests" };
 
 //SC-04, FR-16, FR-17
 export default async function QuestsPage() {
   const user = await requireUser({ role: "STUDENT" });
-  const [mine, assigned, paidToday, [me], [badges]] = await Promise.all([
+  const [mine, assigned, paidToday, [me], [badges], views, growth] = await Promise.all([
     myQuests(user.id),
     myAssignments(user.id),
     submissionsPaidToday(db, user.id),
     db.select({ streak: users.streak }).from(users).where(eq(users.id, user.id)),
     db.select({ n: count() }).from(userBadges).where(eq(userBadges.userId, user.id)),
+    challengeViews(user.id),
+    guildGrowth(),
   ]);
+  //Unfinished challenges first; a finished one is still worth seeing until it ends
+  const live = views.filter((c) => c.state === "active").sort((a, b) => Number(!!a.entry?.completedAt) - Number(!!b.entry?.completedAt));
   const open = assigned.filter((q) => q.status === "IN_REVIEW");
   const done = assigned.filter((q) => q.status !== "IN_REVIEW");
 
@@ -36,6 +44,16 @@ export default async function QuestsPage() {
       />
       </div>
       <BitSays lines={[...BIT.studentTips]} pose="idle" size={72} />
+      <section aria-labelledby="guild-h" className="space-y-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 id="guild-h" className="text-2xl font-bold">The Guild</h2>
+          <Link href="/challenges" className="text-sm font-bold text-brand underline">All challenges</Link>
+        </div>
+        <GuildGrowth g={growth} compact noBit />
+        {live.length > 0 && (
+          <div className="grid gap-3 sm:grid-cols-2">{live.slice(0, 2).map((c) => <ChallengeCard key={c.id} c={c} href={`/challenges/${c.id}`} />)}</div>
+        )}
+      </section>
       <section aria-labelledby="todo" data-tour="todo">
         <h2 id="todo" className="mb-1 text-2xl font-bold">Waiting for your review</h2>
         <p className="mb-4 text-muted">Quests the Guild assigned to you. Your classmates are waiting on these. {!user.trainingDone && <Link href="/training" className="font-bold text-brand underline">Practice first in the Training Grounds.</Link>}</p>

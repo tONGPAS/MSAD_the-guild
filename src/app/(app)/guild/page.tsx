@@ -5,13 +5,16 @@ import { guildMasters, guildMembers } from "@/modules/progression/profile";
 import { Crest } from "@/components/crest";
 import { CrownEmblem, GUILD_MASTER, RankEmblem, XpBar } from "@/components/rank-seal";
 import { rankProgress } from "@/lib/rules";
+import { earnedTitles, guildGrowth, titleStats } from "@/modules/progression/titles";
+import { GuildGrowth } from "@/components/guild-growth";
 
 export const metadata: Metadata = { title: "Guild Hall" };
 
 //SC-08 directory. Alphabetical, not ranked: leaderboards are out of scope (SRS 1.4).
 export default async function GuildHallPage() {
   const me = await requireUser();
-  const [members, masters] = await Promise.all([guildMembers(), guildMasters()]);
+  const [members, masters, growth] = await Promise.all([guildMembers(), guildMasters(), guildGrowth()]);
+  const stats = await titleStats(members.map((m) => m.id));
   return (
     <>
       <h1 className="mb-1 text-3xl font-bold">Guild Hall</h1>
@@ -35,6 +38,7 @@ export default async function GuildHallPage() {
           </ul>
         </section>
       )}
+      <div className="mb-6"><GuildGrowth g={growth} /></div>
       <h2 className="mb-3 text-lg font-bold">Members</h2>
       {members.length === 0 ? (
         <p className="panel p-6 text-muted">No students have joined yet. Faculty can invite them from Members.</p>
@@ -46,6 +50,9 @@ export default async function GuildHallPage() {
                 <Crest id={m.id} name={m.name} size={44} ring={m.id === me.id} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-bold">{m.name}{m.id === me.id && " (you)"}</span>
+                  {earnedTitles(stats.get(m.id)).length > 0 && (
+                    <span className="block truncate text-sm font-bold text-epic">{earnedTitles(stats.get(m.id)).map((t) => t.label).join(" · ")}</span>
+                  )}
                   <span className="mt-0.5 flex items-center gap-1.5 text-sm">
                     <RankEmblem xp={m.xpTotal} size={16} />
                     <span className="font-bold">{rankProgress(m.xpTotal).label}</span>

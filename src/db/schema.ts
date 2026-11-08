@@ -100,6 +100,8 @@ export const quests = pgTable(
     notes: varchar("notes", { length: 1000 }),
     difficulty: difficultyEnum("difficulty").notNull(),
     language: languageEnum("language").notNull().default("c"),
+    //Set when the quest answers a coding challenge (CR-02)
+    challengeId: uuid("challenge_id").references((): AnyPgColumn => challenges.id, { onDelete: "set null" }),
     status: questStatusEnum("status").notNull().default("PENDING"),
     prTitle: varchar("pr_title", { length: 300 }),
     prSize: integer("pr_size"),
@@ -129,6 +131,8 @@ export const reviews = pgTable(
     structure: smallint("structure").notNull(),
     helpful: boolean("helpful"),
     isMentor: boolean("is_mentor").notNull().default(false),
+    //The one comment the submitter thanked with a coin (CR-02); one coin per review
+    coinCommentId: uuid("coin_comment_id"),
     createdAt: ts("created_at").notNull().defaultNow(),
   },
   (t) => [index("reviews_quest_idx").on(t.questId)],
@@ -208,6 +212,53 @@ export const xpEvents = pgTable(
     createdAt: ts("created_at").notNull().defaultNow(),
   },
   (t) => [uniqueIndex("xp_once_idx").on(t.userId, t.action, t.refId)],
+);
+
+//CR-02 Guild challenges. GOAL counts things students already do in a time window;
+//CODING is answered with a quest that a classmate reviews; REVIEW is code everyone reviews.
+export const challengeKindEnum = pgEnum("challenge_kind", ["GOAL", "CODING", "REVIEW"]);
+export const challengeScopeEnum = pgEnum("challenge_scope", ["PERSONAL", "GUILD"]);
+export const challengeMetricEnum = pgEnum("challenge_metric", ["REVIEWS", "PRAISE", "DEEP_REVIEWS", "FAST_RESOLVES", "HELPFUL", "COINS"]);
+
+export const challenges = pgTable(
+  "challenges",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    kind: challengeKindEnum("kind").notNull(),
+    scope: challengeScopeEnum("scope").notNull().default("PERSONAL"),
+    metric: challengeMetricEnum("metric"),
+    target: smallint("target"),
+    title: varchar("title", { length: 80 }).notNull(),
+    description: varchar("description", { length: 1000 }).notNull(),
+    code: varchar("code", { length: 10000 }),
+    context: varchar("context", { length: 500 }),
+    language: languageEnum("language").notNull().default("c"),
+    xpReward: smallint("xp_reward").notNull(),
+    startsAt: ts("starts_at").notNull(),
+    endsAt: ts("ends_at").notNull(),
+    templateKey: varchar("template_key", { length: 40 }),
+    createdBy: uuid("created_by").notNull().references(() => users.id),
+    createdAt: ts("created_at").notNull().defaultNow(),
+    //Guild goals pay every contributor once, when the shared target is reached
+    rewardedAt: ts("rewarded_at"),
+  },
+  (t) => [index("challenges_window_idx").on(t.endsAt, t.startsAt)],
+);
+
+//One row per student per challenge: a goal they finished, a coding answer, or a review entry
+export const challengeEntries = pgTable(
+  "challenge_entries",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    challengeId: uuid("challenge_id").notNull().references(() => challenges.id, { onDelete: "cascade" }),
+    userId: uuid("user_id").notNull().references(() => users.id),
+    questId: uuid("quest_id").references(() => quests.id, { onDelete: "set null" }),
+    review: jsonb("review").$type<{ readability: number; correctness: number; structure: number; comments: { kind: "ISSUE" | "PRAISE"; body: string }[] }>(),
+    words: integer("words"),
+    completedAt: ts("completed_at"),
+    createdAt: ts("created_at").notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("challenge_entry_once_idx").on(t.challengeId, t.userId)],
 );
 
 export const userBadges = pgTable(

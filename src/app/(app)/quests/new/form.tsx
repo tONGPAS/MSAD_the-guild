@@ -14,12 +14,15 @@ const PICKED: Record<Difficulty, string> = {
 const LEVELS = (["EASY", "MEDIUM", "HARD"] as const).map((v) => ({ v, ...RARITY[v] }));
 const LANGS = [["c", "C"], ["cpp", "C++"]] as const;
 
-export function NewQuestForm({ attachments, xpLeftToday }: { attachments: boolean; xpLeftToday: number }) {
+export function NewQuestForm({ attachments, xpLeftToday, challenge }: { attachments: boolean; xpLeftToday: number; challenge: { id: string; title: string; language: "c" | "cpp" } | null }) {
   const [state, action] = useActionState<QuestFormState, FormData>(createQuest, {});
-  const f = state.fields;
+  const f = state.fields ?? (challenge ? { title: `Challenge: ${challenge.title}`, language: challenge.language } : undefined);
+  const keepChallenge = challenge ? (state.fields ? state.fields.challenge : challenge.id) : "";
   const [contextLen, setContextLen] = useState((f?.context ?? "").length);
   return (
     <form action={action} className="grid gap-6 lg:grid-cols-[1fr_18rem]">
+      {/*After a failed submit the server sends back the challenge id, or "" if it can no longer be answered*/}
+      {keepChallenge && <input type="hidden" name="challenge" value={keepChallenge} />}
       <div className="panel space-y-4 p-6">
         {state.error && <p role="alert" className="rounded-md bg-danger-soft p-3 text-danger">{state.error}</p>}
         <div>

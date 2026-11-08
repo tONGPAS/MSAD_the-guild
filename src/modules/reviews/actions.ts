@@ -11,6 +11,7 @@ import { notify } from "@/modules/notifications/service";
 import { awardXp } from "@/modules/progression/service";
 import { hasOpenMentorRequest } from "@/modules/mentor/service";
 import { transition } from "@/modules/quests/service";
+import { completeCodingEntry } from "@/modules/challenges/service";
 
 import { checkReview, readPayload, type ReviewFormState } from "./rubric";
 
@@ -32,6 +33,7 @@ export async function submitReview(questId: string, _: ReviewFormState, form: Fo
     await transition(tx, questId, "IN_REVIEW", "COMPLETED", user.id, { completedAt: new Date() });
     await awardXp(tx, user.id, "COMPLETE_REVIEW", questId);
     await notify(tx, q.submitterId, `Your quest ${formatRef(q.refNo)} has been reviewed.`, questId);
+    await completeCodingEntry(tx, questId);
     return { refNo: q.refNo };
   });
 
@@ -107,4 +109,29 @@ export async function resolveQuest(questId: string) {
   }
   revalidatePath("/", "layout");
   redirect(`/quests/${q.refNo}?resolved=${outcome}`);
+}
+
+//CR-02: the submitter thanks one comment per peer review with a coin; its writer earns XP
+export async function giveCoin(questId: string, reviewId: string, commentId: string) {
+  const user = await requireUser({ role: "STUDENT" });
+  const q = await loadOwnQuest(questId, user.id);
+  if (!q || (q.status !== "COMPLETED" && q.status !== "RESOLVED")) return;
+  await db.transaction(async (tx) => {
+    const [c] = await tx
+      .select({ id: comments.id })
+      .from(comments)
+      .innerJoin(reviews, eq(reviews.id, comments.reviewId))
+      .where(and(eq(comments.id, commentId), eq(comments.reviewId, reviewId), eq(reviews.questId, questId), eq(comments.authorId, reviews.reviewerId)))
+      .limit(1);
+    if (!c) return;
+    const [rev] = await tx
+      .update(reviews)
+      .set({ coinCommentId: commentId })
+      .where(and(eq(reviews.id, reviewId), isNull(reviews.coinCommentId), eq(reviews.isMentor, false)))
+      .returning({ reviewerId: reviews.reviewerId });
+    if (!rev) return;
+    await awardXp(tx, rev.reviewerId, "COIN", reviewId);
+    await notify(tx, rev.reviewerId, `${user.name} gave you a thank-you coin for a comment on ${formatRef(q.refNo)}.`, questId);
+  });
+  revalidatePath("/", "layout");
 }

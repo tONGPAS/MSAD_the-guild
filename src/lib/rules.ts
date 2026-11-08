@@ -16,8 +16,11 @@ export const XP = {
   COMPLETE_REVIEW: 25,
   RESOLVE_FAST: 10,
   HELPFUL_RATING: 15,
+  //CR-02: the reviewer whose comment the submitter thanked
+  COIN: 5,
 } as const;
-export type XpAction = keyof typeof XP;
+//CHALLENGE pays whatever the Guild Master set, so it has no fixed amount here
+export type XpAction = keyof typeof XP | "CHALLENGE";
 
 //Only the first few quests a day earn submit XP, so junk quests cannot farm points.
 //Submitting more still works; it just pays nothing.

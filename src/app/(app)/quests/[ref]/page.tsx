@@ -4,14 +4,15 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/modules/auth/session";
 import { getQuestForViewer } from "@/modules/quests/service";
 import { attachmentUrl } from "@/modules/quests/storage";
-import { rateReview, replyToIssue, resolveQuest } from "@/modules/reviews/actions";
+import { getChallenge } from "@/modules/challenges/service";
+import { giveCoin, rateReview, replyToIssue, resolveQuest } from "@/modules/reviews/actions";
 import { DifficultyTag, StatusTag } from "@/components/badges";
 import { CodeView } from "@/components/code-view";
 import { QuestBrief } from "@/components/quest-brief";
 import { RewardBurst } from "@/components/reward-burst";
 import { db } from "@/db";
 import { justEarnedBadges } from "@/modules/progression/badges";
-import { CommentIcon, ScorePips } from "@/components/comment-icon";
+import { Coin, CommentIcon, ScorePips } from "@/components/comment-icon";
 import { Crest } from "@/components/crest";
 import { CrownEmblem } from "@/components/rank-seal";
 import { SubmitButton } from "@/components/submit-button";
@@ -38,6 +39,7 @@ export default async function QuestPage({ params, searchParams }: PageProps<"/qu
   if (!view) notFound();
   const { quest: q, isSubmitter, isReviewer, isFaculty } = view;
   const image = q.attachmentRef ? await attachmentUrl(q.attachmentRef) : null;
+  const challenge = q.challengeId ? await getChallenge(q.challengeId) : null;
   const openMentor = q.mentorRequests.find((m) => m.status !== "RESOLVED");
   const earned = sp.submitted || sp.reviewed || sp.resolved ? await justEarnedBadges(db, user.id) : [];
   const stale = isStale(q.status, q.assignedAt);
@@ -98,6 +100,9 @@ export default async function QuestPage({ params, searchParams }: PageProps<"/qu
 
       <header>
         <p className="font-mono text-sm text-muted">{formatRef(q.refNo)}</p>
+        {challenge && (
+          <p className="mb-1 inline-flex items-center gap-1.5 rounded-full bg-rare-soft px-2.5 py-0.5 text-sm font-bold text-rare">Answer to the challenge: {challenge.title}</p>
+        )}
         <h1 className="mb-3 text-3xl font-extrabold">{q.title}</h1>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
           <StatusTag status={q.status} />
@@ -179,6 +184,16 @@ export default async function QuestPage({ params, searchParams }: PageProps<"/qu
                     {c.kind === "ISSUE" ? "Issue" : "Praise"}
                   </p>
                   <p className="whitespace-pre-wrap">{c.body}</p>
+                  {r.coinCommentId === c.id && (
+                    <p className="anim-pop mt-2 inline-flex items-center gap-1.5 rounded-full bg-gold-soft px-2.5 py-0.5 text-sm font-bold text-gold"><Coin /> Thanked with a coin</p>
+                  )}
+                  {isSubmitter && !r.isMentor && !r.coinCommentId && c.authorId === r.reviewer.id && (
+                    <form action={giveCoin.bind(null, q.id, r.id, c.id)} className="mt-2">
+                      <button className="inline-flex items-center gap-1.5 rounded-full border-2 border-gold/60 px-2.5 py-0.5 text-sm font-bold text-gold hover:bg-gold-soft" title="Give one coin per review to the comment that helped most. The reviewer earns 5 XP.">
+                        <Coin size={16} /> Give a coin
+                      </button>
+                    </form>
+                  )}
                   {replies.map((rep) => (
                     <div key={rep.id} className="mt-3 border-l-2 border-line pl-3">
                       <p className="text-sm text-muted">{rep.authorId === user.id ? "You" : rep.author.name} replied</p>

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/modules/auth/session";
 import { BADGE_ORDER, BADGES, type BadgeCode } from "@/modules/progression/badges";
+import { TITLES, titleStats } from "@/modules/progression/titles";
 import { guildProfile, recentXp } from "@/modules/progression/profile";
 import { DifficultyTag } from "@/components/badges";
 import { Crest } from "@/components/crest";
@@ -30,6 +31,7 @@ export default async function ProfilePage({ params }: PageProps<"/guild/[id]">) 
   const prog = rankProgress(p.user.xpTotal);
   const earned = new Map(p.badges.map((b) => [b.code as BadgeCode, b.awardedAt]));
   const xp = self ? await recentXp(p.user.id) : [];
+  const tstats = (await titleStats([p.user.id])).get(p.user.id);
   //A review links only where the quest page would open for this viewer (BRL-10)
   const canOpen = (submitterId: string) => viewer.role === "FACULTY" || self || submitterId === viewer.id;
 
@@ -71,6 +73,24 @@ export default async function ProfilePage({ params }: PageProps<"/guild/[id]">) 
                 <BadgeIcon code={code} earned={!!at} />
                 <p className="font-bold leading-tight">{BADGES[code].label}</p>
                 <p className="text-xs">{at ? `Earned ${ago(at)}` : BADGES[code].how}</p>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+
+      <section aria-labelledby="titles">
+        <h2 id="titles" className="mb-1 text-xl font-bold">Titles</h2>
+        <p className="mb-3 text-sm text-muted">Earned automatically by how you review. They show under your name in the Guild Hall.</p>
+        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          {TITLES.map((t) => {
+            const n = tstats?.[t.code] ?? 0;
+            const got = n >= t.need;
+            return (
+              <li key={t.code} className={`rounded-xl border-2 p-3 ${got ? "border-epic border-b-4 bg-epic-soft" : "border-dashed border-line text-muted"}`}>
+                <p className={`font-bold leading-tight ${got ? "text-epic" : ""}`}>{t.label}</p>
+                <p className="text-xs">{t.how}</p>
+                <p className="font-pixel mt-1 text-base">{Math.min(n, t.need)}/{t.need}</p>
               </li>
             );
           })}
